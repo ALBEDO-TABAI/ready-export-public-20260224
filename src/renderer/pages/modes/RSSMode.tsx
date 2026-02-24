@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { RefreshCw, Filter, ExternalLink, Star, X } from 'lucide-react'
+import { RefreshCw, Filter, ExternalLink, Star, X, AlertCircle } from 'lucide-react'
 
 interface RSSItem {
   id: string
@@ -27,6 +27,8 @@ export default function RSSMode() {
   const [selectedItem, setSelectedItem] = useState<RSSItem | null>(null)
   const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState<'all' | 'unread' | 'starred'>('all')
+  const [isMock, setIsMock] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadRSSData()
@@ -34,25 +36,34 @@ export default function RSSMode() {
 
   const loadRSSData = async () => {
     setLoading(true)
+    setError(null)
     try {
       if (typeof window !== 'undefined' && window.electronAPI) {
         const result = await window.electronAPI.rss.getItems()
-        if (result.success && result.items) {
-          setItems(result.items.map((item: { publishedAt: string | number | Date }) => ({
+        if (result.success === false) {
+          setError(result.error || '获取 RSS 项目失败')
+          setItems([])
+        } else if (result.data) {
+          setItems(result.data.map((item: { publishedAt: string | number | Date }) => ({
             ...item,
             publishedAt: new Date(item.publishedAt).toLocaleString()
           })))
+          setIsMock(result.mock || false)
         }
 
         const sourcesResult = await window.electronAPI.rss.getSources()
-        if (sourcesResult.success && sourcesResult.sources) {
-          setSources(sourcesResult.sources.map((s: { id: string; name: string }) => ({
+        if (sourcesResult.success === false) {
+          setError(prev => prev || sourcesResult.error || '获取 RSS 源失败')
+          setSources([])
+        } else if (sourcesResult.data) {
+          setSources(sourcesResult.data.map((s: { id: string; name: string }) => ({
             ...s,
             count: Math.floor(Math.random() * 20) + 5
           })))
         }
       } else {
         // Mock data for development
+        setIsMock(true)
         setItems([
           { 
             id: '1', 
@@ -82,8 +93,12 @@ export default function RSSMode() {
           { id: '2', name: '虎嗅', count: 12 }
         ])
       }
-    } catch (error) {
-      console.log('RSS data load error:', error)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '加载 RSS 数据时发生错误'
+      console.log('RSS data load error:', err)
+      setError(errorMessage)
+      setItems([])
+      setSources([])
     } finally {
       setLoading(false)
     }
@@ -103,6 +118,26 @@ export default function RSSMode() {
     }
   }
 
+  // Error UI
+  if (error && !loading && items.length === 0) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center" style={{ background: 'var(--bg-content)' }}>
+        <div className="text-center p-8">
+          <AlertCircle className="w-16 h-16 mx-auto mb-4 text-[var(--color-red)]" />
+          <h3 className="text-[16px] font-semibold text-[var(--text-title)] mb-2">加载失败</h3>
+          <p className="text-[13px] text-[var(--text-muted)] mb-4 max-w-[300px]">{error}</p>
+          <button
+            onClick={loadRSSData}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--color-blue)] text-white text-[13px] hover:brightness-95 transition-all"
+          >
+            <RefreshCw className="w-4 h-4" />
+            重试
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Filter Bar */}
@@ -115,6 +150,11 @@ export default function RSSMode() {
           <span className="px-2 py-0.5 rounded-full bg-[var(--color-blue-light)] text-[var(--color-blue)] text-[11px]">
             {items.length} 条
           </span>
+          {isMock && (
+            <span className="px-2 py-0.5 rounded-full bg-[var(--color-orange-light)] text-[var(--color-orange)] text-[11px]">
+              Mock 模式
+            </span>
+          )}
         </div>
         
         <div className="flex items-center gap-2">

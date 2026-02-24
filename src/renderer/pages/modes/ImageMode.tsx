@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   MousePointer, Move, Grid3X3, Square, Type, Brush,
   Sparkles, Layers, Eye, EyeOff, Lock, Unlock,
   Copy, Trash2, Download, ChevronDown, ChevronRight,
-  Plus, Minus
+  Plus, Minus, GripVertical, Type as TypeIcon, Image as ImageIcon
 } from 'lucide-react'
 
 // --- Types ---
@@ -29,6 +29,13 @@ interface CanvasObject {
 }
 
 type ActiveTool = 'select' | 'pan' | 'grid' | 'shape' | 'text' | 'brush' | 'ai'
+
+interface ContextMenuState {
+  visible: boolean
+  x: number
+  y: number
+  layerId: string | null
+}
 
 // --- Initial Data ---
 
@@ -86,8 +93,33 @@ export default function ImageMode() {
   const [selectedId, setSelectedId] = useState<string | null>('title-text')
   const [zoom, setZoom] = useState(1)
   const [layersExpanded, setLayersExpanded] = useState(true)
+  
+  // Drag and drop state
+  const [draggedId, setDraggedId] = useState<string | null>(null)
+  const [dragOverId, setDragOverId] = useState<string | null>(null)
+  
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<ContextMenuState>({
+    visible: false,
+    x: 0,
+    y: 0,
+    layerId: null
+  })
+  
+  const contextMenuRef = useRef<HTMLDivElement>(null)
 
   const selectedObject = objects.find(o => o.id === selectedId) || null
+
+  // Close context menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+        setContextMenu(prev => ({ ...prev, visible: false }))
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // --- Handlers ---
 
@@ -133,6 +165,108 @@ export default function ImageMode() {
     }
     setObjects(prev => [...prev, newObj])
   }, [objects])
+
+  // Merge layer with the one below it
+  const mergeLayer = useCallback((id: string) => {
+    const currentIndex = objects.findIndex(o => o.id === id)
+    if (currentIndex <= 0) return // Can't merge if it's the bottom layer or not found
+    
+    const currentObj = objects[currentIndex]
+    const targetObj = objects[currentIndex - 1]
+    
+    // Simple merge: delete the current layer and apply some properties to target
+    // In a real app, this would involve canvas drawing operations
+    setObjects(prev => {
+      const newObjects = [...prev]
+      // Remove the current layer
+      newObjects.splice(currentIndex, 1)
+      return newObjects
+    })
+    
+    if (selectedId === id) {
+      setSelectedId(targetObj.id)
+    }
+  }, [objects, selectedId])
+
+  // --- Drag and Drop Handlers ---
+
+  const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
+    setDraggedId(id)
+    e.dataTransfer.effectAllowed = 'move'
+    // Set a transparent drag image or use default
+    e.dataTransfer.setData('text/plain', id)
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent, id: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (draggedId && draggedId !== id) {
+      setDragOverId(id)
+    }
+  }, [draggedId])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOverId(null)
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent, targetId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!draggedId || draggedId === targetId) {
+      setDraggedId(null)
+      setDragOverId(null)
+      return
+    }
+
+    setObjects(prev => {
+      const draggedIndex = prev.findIndex(o => o.id === draggedId)
+      const targetIndex = prev.findIndex(o => o.id === targetId)
+      
+      if (draggedIndex === -1 || targetIndex === -1) return prev
+      
+      const newObjects = [...prev]
+      const [removed] = newObjects.splice(draggedIndex, 1)
+      newObjects.splice(targetIndex, 0, removed)
+      
+      return newObjects
+    })
+    
+    setDraggedId(null)
+    setDragOverId(null)
+  }, [draggedId])
+
+  // --- Context Menu Handlers ---
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, id: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      layerId: id
+    })
+  }, [])
+
+  const handleContextMenuAction = useCallback((action: 'duplicate' | 'delete' | 'merge') => {
+    if (!contextMenu.layerId) return
+    
+    switch (action) {
+      case 'duplicate':
+        duplicateObject(contextMenu.layerId)
+        break
+      case 'delete':
+        deleteObject(contextMenu.layerId)
+        break
+      case 'merge':
+        mergeLayer(contextMenu.layerId)
+        break
+    }
+    
+    setContextMenu(prev => ({ ...prev, visible: false }))
+  }, [contextMenu.layerId, duplicateObject, deleteObject, mergeLayer])
 
   // --- Tool definitions ---
 
@@ -404,73 +538,124 @@ export default function ImageMode() {
             </button>
 
             {layersExpanded && (
-              <div className="max-h-[200px] overflow-auto pb-2">
-                {[...objects].reverse().map((obj) => (
-                  <div
-                    key={obj.id}
-                    onClick={() => !obj.locked && handleObjectSelect(obj.id)}
-                    className={`
-                      flex items-center gap-2 px-4 py-1.5 text-[11px] cursor-pointer
-                      transition-colors group
-                      ${obj.id === selectedId
-                        ? 'bg-[var(--color-blue-light)] text-[var(--color-blue)]'
-                        : 'text-[var(--text-body)] hover:bg-black/[0.03]'
-                      }
-                    `}
-                  >
-                    {/* Visibility toggle */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); toggleVisibility(obj.id) }}
-                      className="opacity-40 hover:opacity-100 transition-opacity"
+              <div className="max-h-[240px] overflow-auto pb-2">
+                {[...objects].reverse().map((obj, reversedIndex) => {
+                  const originalIndex = objects.length - 1 - reversedIndex
+                  const isDragOver = dragOverId === obj.id && draggedId !== obj.id
+                  
+                  return (
+                    <div
+                      key={obj.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, obj.id)}
+                      onDragOver={(e) => handleDragOver(e, obj.id)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, obj.id)}
+                      onClick={() => !obj.locked && handleObjectSelect(obj.id)}
+                      onContextMenu={(e) => handleContextMenu(e, obj.id)}
+                      className={`
+                        flex items-center gap-2 px-3 py-1.5 text-[11px] cursor-pointer
+                        transition-colors group select-none
+                        ${obj.id === selectedId
+                          ? 'bg-[var(--color-blue-light)] text-[var(--color-blue)]'
+                          : 'text-[var(--text-body)] hover:bg-black/[0.03]'
+                        }
+                        ${isDragOver ? 'border-t-2 border-[var(--color-blue)]' : ''}
+                        ${draggedId === obj.id ? 'opacity-50' : ''}
+                      `}
                     >
-                      {obj.visible
-                        ? <Eye className="w-3 h-3" />
-                        : <EyeOff className="w-3 h-3 text-red-400" />
-                      }
-                    </button>
+                      {/* Drag Handle */}
+                      <GripVertical className="w-3 h-3 opacity-30 cursor-grab active:cursor-grabbing" />
+                      
+                      {/* Thumbnail */}
+                      <LayerThumbnail obj={obj} />
 
-                    {/* Name */}
-                    <span className={`flex-1 truncate ${!obj.visible ? 'line-through opacity-40' : ''}`}>
-                      {obj.name}
-                    </span>
-
-                    {/* Lock toggle */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); toggleLock(obj.id) }}
-                      className="opacity-0 group-hover:opacity-40 hover:!opacity-100 transition-opacity"
-                    >
-                      {obj.locked
-                        ? <Lock className="w-3 h-3 text-amber-500" />
-                        : <Unlock className="w-3 h-3" />
-                      }
-                    </button>
-
-                    {/* Actions */}
-                    <div className="flex gap-0.5 opacity-0 group-hover:opacity-40">
+                      {/* Visibility toggle */}
                       <button
-                        onClick={(e) => { e.stopPropagation(); duplicateObject(obj.id) }}
-                        className="hover:!opacity-100 transition-opacity"
-                        title="复制图层"
+                        onClick={(e) => { e.stopPropagation(); toggleVisibility(obj.id) }}
+                        className="opacity-40 hover:opacity-100 transition-opacity"
                       >
-                        <Copy className="w-3 h-3" />
+                        {obj.visible
+                          ? <Eye className="w-3 h-3" />
+                          : <EyeOff className="w-3 h-3 text-red-400" />
+                        }
                       </button>
-                      {!obj.locked && (
+
+                      {/* Name */}
+                      <span className={`flex-1 truncate ${!obj.visible ? 'line-through opacity-40' : ''}`}>
+                        {obj.name}
+                      </span>
+
+                      {/* Lock toggle */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleLock(obj.id) }}
+                        className="opacity-0 group-hover:opacity-40 hover:!opacity-100 transition-opacity"
+                      >
+                        {obj.locked
+                          ? <Lock className="w-3 h-3 text-amber-500" />
+                          : <Unlock className="w-3 h-3" />
+                        }
+                      </button>
+
+                      {/* Actions */}
+                      <div className="flex gap-0.5 opacity-0 group-hover:opacity-40">
                         <button
-                          onClick={(e) => { e.stopPropagation(); deleteObject(obj.id) }}
-                          className="hover:!opacity-100 hover:text-red-500 transition-all"
-                          title="删除图层"
+                          onClick={(e) => { e.stopPropagation(); duplicateObject(obj.id) }}
+                          className="hover:!opacity-100 transition-opacity"
+                          title="复制图层"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Copy className="w-3 h-3" />
                         </button>
-                      )}
+                        {!obj.locked && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); deleteObject(obj.id) }}
+                            className="hover:!opacity-100 hover:text-red-500 transition-all"
+                            title="删除图层"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Context Menu */}
+      {contextMenu.visible && (
+        <div
+          ref={contextMenuRef}
+          className="fixed z-50 bg-white rounded-lg shadow-lg border border-[var(--border-default)] py-1 min-w-[140px]"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          <button
+            onClick={() => handleContextMenuAction('duplicate')}
+            className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-[var(--text-body)] hover:bg-black/[0.05] transition-colors"
+          >
+            <Copy className="w-3.5 h-3.5" />
+            复制图层
+          </button>
+          <button
+            onClick={() => handleContextMenuAction('merge')}
+            className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-[var(--text-body)] hover:bg-black/[0.05] transition-colors"
+          >
+            <Layers className="w-3.5 h-3.5" />
+            向下合并
+          </button>
+          <div className="h-px bg-[var(--border-default)] my-1" />
+          <button
+            onClick={() => handleContextMenuAction('delete')}
+            className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-red-500 hover:bg-red-50 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            删除图层
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -505,6 +690,61 @@ function NumberField({
         />
         {suffix && <span className="text-[10px] text-[var(--text-muted)] ml-1">{suffix}</span>}
       </div>
+    </div>
+  )
+}
+
+// Layer Thumbnail Component
+function LayerThumbnail({ obj }: { obj: CanvasObject }) {
+  const getThumbnailContent = () => {
+    switch (obj.type) {
+      case 'rect':
+        return (
+          <div
+            className="w-full h-full rounded-sm"
+            style={{ 
+              backgroundColor: obj.fill || '#ccc',
+              opacity: obj.visible ? (obj.fillOpacity ?? 1) : 0.3
+            }}
+          />
+        )
+      case 'text':
+        return (
+          <div 
+            className="w-full h-full flex items-center justify-center rounded-sm"
+            style={{ 
+              backgroundColor: obj.fill ? `${obj.fill}20` : '#f0f0f0',
+              opacity: obj.visible ? 1 : 0.3
+            }}
+          >
+            <TypeIcon 
+              className="w-3 h-3" 
+              style={{ color: obj.fill || '#333' }}
+            />
+          </div>
+        )
+      case 'image':
+        return (
+          <div 
+            className="w-full h-full flex items-center justify-center rounded-sm bg-gray-100"
+            style={{ opacity: obj.visible ? 1 : 0.3 }}
+          >
+            <ImageIcon className="w-3 h-3 text-gray-500" />
+          </div>
+        )
+      default:
+        return (
+          <div className="w-full h-full bg-gray-200 rounded-sm" />
+        )
+    }
+  }
+
+  return (
+    <div 
+      className="w-6 h-6 rounded border border-[var(--border-default)] overflow-hidden flex-shrink-0"
+      title={`${obj.type === 'rect' ? '矩形' : obj.type === 'text' ? '文本' : '图片'}图层`}
+    >
+      {getThumbnailContent()}
     </div>
   )
 }

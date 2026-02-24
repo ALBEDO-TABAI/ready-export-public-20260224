@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { 
   MousePointer, Type, Square, Image, Music, Subtitles, Mic, Sparkles,
   Trash2, Scissors, Copy, SkipBack, Play, SkipForward, Volume2, ZoomIn, Maximize
@@ -12,12 +12,35 @@ interface TimelineClip {
   color: string
 }
 
+type ClipType = 'video' | 'subtitle'
+
+interface SelectedClip {
+  id: string
+  type: ClipType
+}
+
 export default function VideoMode() {
   const [activeTool, setActiveTool] = useState('select')
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(6)
   const [duration] = useState(117)
   const [zoom, setZoom] = useState(1)
+  
+  // 使用 useState 管理时间轴数据
+  const [videoClips, setVideoClips] = useState<TimelineClip[]>([
+    { id: '1', start: 0, end: 45, label: 'hook', color: '#5B8DEF' },
+    { id: '2', start: 45, end: 62, label: 'cut', color: '#E97A2B' },
+    { id: '3', start: 120, end: 195, label: 'climax', color: '#5B8DEF' }
+  ])
+
+  const [subtitleClips, setSubtitleClips] = useState<TimelineClip[]>([
+    { id: 's1', start: 0, end: 15, label: '大家好', color: '#10B981' },
+    { id: 's2', start: 15, end: 30, label: '思考...', color: '#E97A2B' },
+    { id: 's3', start: 30, end: 45, label: '停更原因', color: '#E97A2B' }
+  ])
+
+  // 选中片段状态
+  const [selectedClip, setSelectedClip] = useState<SelectedClip | null>(null)
 
   const tools = [
     { id: 'select', icon: MousePointer, label: '选择' },
@@ -29,23 +52,136 @@ export default function VideoMode() {
     { id: 'voiceover', icon: Mic, label: '配音' }
   ]
 
-  const videoClips: TimelineClip[] = [
-    { id: '1', start: 0, end: 45, label: 'hook', color: '#5B8DEF' },
-    { id: '2', start: 45, end: 62, label: 'cut', color: '#E97A2B' },
-    { id: '3', start: 120, end: 195, label: 'climax', color: '#5B8DEF' }
-  ]
-
-  const subtitleClips: TimelineClip[] = [
-    { id: 's1', start: 0, end: 15, label: '大家好', color: '#10B981' },
-    { id: 's2', start: 15, end: 30, label: '思考...', color: '#E97A2B' },
-    { id: 's3', start: 30, end: 45, label: '停更原因', color: '#E97A2B' }
-  ]
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = Math.floor(seconds % 60)
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
+
+  // 播放控制边界处理
+  const handleSetCurrentTime = useCallback((time: number) => {
+    setCurrentTime(Math.max(0, Math.min(time, duration)))
+  }, [duration])
+
+  // 跳转到开头
+  const handleSkipToStart = useCallback(() => {
+    handleSetCurrentTime(0)
+  }, [handleSetCurrentTime])
+
+  // 跳转到结尾
+  const handleSkipToEnd = useCallback(() => {
+    handleSetCurrentTime(duration)
+  }, [duration, handleSetCurrentTime])
+
+  // 选中片段
+  const handleSelectClip = useCallback((id: string, type: ClipType) => {
+    setSelectedClip({ id, type })
+  }, [])
+
+  // 获取选中的 clip 数据
+  const getSelectedClipData = useCallback((): { clip: TimelineClip | undefined; type: ClipType; setter: React.Dispatch<React.SetStateAction<TimelineClip[]>> } => {
+    if (!selectedClip) return { clip: undefined, type: 'video', setter: setVideoClips }
+    
+    if (selectedClip.type === 'video') {
+      return { 
+        clip: videoClips.find(c => c.id === selectedClip.id), 
+        type: 'video',
+        setter: setVideoClips 
+      }
+    } else {
+      return { 
+        clip: subtitleClips.find(c => c.id === selectedClip.id), 
+        type: 'subtitle',
+        setter: setSubtitleClips 
+      }
+    }
+  }, [selectedClip, videoClips, subtitleClips])
+
+  // 分割功能：在 currentTime 处将选中的 clip 分成两段
+  const handleSplit = useCallback(() => {
+    if (!selectedClip) return
+    
+    const { clip, type, setter } = getSelectedClipData()
+    if (!clip) return
+
+    // 检查 currentTime 是否在 clip 范围内（留出最小分割间隔）
+    const minSplitInterval = 1 // 最小分割间隔 1 秒
+    if (currentTime <= clip.start + minSplitInterval || currentTime >= clip.end - minSplitInterval) {
+      console.warn('分割点必须在片段内部，且距离边界至少 1 秒')
+      return
+    }
+
+    // 创建两个新的片段
+    const leftClip: TimelineClip = {
+      ...clip,
+      id: `${clip.id}-split-left-${Date.now()}`,
+      end: currentTime
+    }
+    
+    const rightClip: TimelineClip = {
+      ...clip,
+      id: `${clip.id}-split-right-${Date.now()}`,
+      start: currentTime
+    }
+
+    // 更新状态：移除原 clip，添加两个新 clip
+    setter(prevClips => {
+      const filtered = prevClips.filter(c => c.id !== clip.id)
+      const newClips = [...filtered, leftClip, rightClip]
+      // 按开始时间排序，确保时间轴顺序正确
+      return newClips.sort((a, b) => a.start - b.start)
+    })
+
+    // 更新选中状态为左侧片段
+    setSelectedClip({ id: leftClip.id, type })
+  }, [selectedClip, currentTime, getSelectedClipData])
+
+  // 复制功能：复制选中的 clip，生成新 ID
+  const handleCopy = useCallback(() => {
+    if (!selectedClip) return
+    
+    const { clip, type, setter } = getSelectedClipData()
+    if (!clip) return
+
+    // 计算新位置：在原 clip 后面，间隔 1 秒
+    const clipDuration = clip.end - clip.start
+    const newStart = clip.end + 1
+    const newEnd = newStart + clipDuration
+
+    const newClip: TimelineClip = {
+      ...clip,
+      id: `${clip.id}-copy-${Date.now()}`,
+      start: newStart,
+      end: newEnd
+    }
+
+    // 更新状态
+    setter(prevClips => {
+      const newClips = [...prevClips, newClip]
+      // 按开始时间排序
+      return newClips.sort((a, b) => a.start - b.start)
+    })
+
+    // 更新选中状态为新片段
+    setSelectedClip({ id: newClip.id, type })
+  }, [selectedClip, getSelectedClipData])
+
+  // 删除功能：删除选中的 clip
+  const handleDelete = useCallback(() => {
+    if (!selectedClip) return
+    
+    const { clip, setter } = getSelectedClipData()
+    if (!clip) return
+
+    // 更新状态：移除选中的 clip
+    setter(prevClips => prevClips.filter(c => c.id !== clip.id))
+    
+    // 清除选中状态
+    setSelectedClip(null)
+  }, [selectedClip, getSelectedClipData])
+
+  // 判断是否有选中的片段
+  const hasSelectedClip = selectedClip !== null
 
   return (
     <div className="flex flex-col h-full">
@@ -145,19 +281,38 @@ export default function VideoMode() {
             style={{ background: 'var(--bg-toolbar)' }}
           >
             <div className="flex items-center gap-1">
-              <button className="p-1.5 rounded hover:bg-black/5 transition-colors">
+              <button 
+                onClick={handleDelete}
+                disabled={!hasSelectedClip}
+                className={`p-1.5 rounded transition-colors ${hasSelectedClip ? 'hover:bg-black/5 text-[var(--text-title)]' : 'text-[var(--text-muted)] cursor-not-allowed'}`}
+                title="删除"
+              >
                 <Trash2 className="w-4 h-4" strokeWidth={2} />
               </button>
-              <button className="p-1.5 rounded hover:bg-black/5 transition-colors">
+              <button 
+                onClick={handleSplit}
+                disabled={!hasSelectedClip}
+                className={`p-1.5 rounded transition-colors ${hasSelectedClip ? 'hover:bg-black/5 text-[var(--text-title)]' : 'text-[var(--text-muted)] cursor-not-allowed'}`}
+                title="分割"
+              >
                 <Scissors className="w-4 h-4" strokeWidth={2} />
               </button>
-              <button className="p-1.5 rounded hover:bg-black/5 transition-colors">
+              <button 
+                onClick={handleCopy}
+                disabled={!hasSelectedClip}
+                className={`p-1.5 rounded transition-colors ${hasSelectedClip ? 'hover:bg-black/5 text-[var(--text-title)]' : 'text-[var(--text-muted)] cursor-not-allowed'}`}
+                title="复制"
+              >
                 <Copy className="w-4 h-4" strokeWidth={2} />
               </button>
             </div>
             
             <div className="flex items-center gap-2">
-              <button className="p-1.5 rounded hover:bg-black/5 transition-colors">
+              <button 
+                onClick={handleSkipToStart}
+                className="p-1.5 rounded hover:bg-black/5 transition-colors"
+                title="跳转到开头"
+              >
                 <SkipBack className="w-4 h-4" strokeWidth={2} />
               </button>
               <button 
@@ -170,7 +325,11 @@ export default function VideoMode() {
                   <Play className="w-3.5 h-3.5 ml-0.5" fill="currentColor" />
                 )}
               </button>
-              <button className="p-1.5 rounded hover:bg-black/5 transition-colors">
+              <button 
+                onClick={handleSkipToEnd}
+                className="p-1.5 rounded hover:bg-black/5 transition-colors"
+                title="跳转到结尾"
+              >
                 <SkipForward className="w-4 h-4" strokeWidth={2} />
               </button>
             </div>
@@ -199,6 +358,43 @@ export default function VideoMode() {
         >
           <div className="p-4">
             <h3 className="text-[13px] font-semibold text-[var(--text-title)] mb-4">属性</h3>
+            
+            {/* Selected Clip Info */}
+            {selectedClip && (
+              <div className="mb-6 p-3 bg-[var(--bg-canvas)] rounded-lg">
+                <h4 className="text-[10px] font-medium text-[var(--color-blue)] uppercase tracking-wide mb-2">
+                  选中片段
+                </h4>
+                {(() => {
+                  const { clip } = getSelectedClipData()
+                  if (!clip) return null
+                  return (
+                    <div className="space-y-1 text-[11px]">
+                      <div className="flex justify-between">
+                        <span className="text-[var(--text-muted)]">ID:</span>
+                        <span className="text-[var(--text-title)]">{clip.id}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[var(--text-muted)]">标签:</span>
+                        <span className="text-[var(--text-title)]">{clip.label}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[var(--text-muted)]">开始:</span>
+                        <span className="text-[var(--text-title)]">{formatTime(clip.start)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[var(--text-muted)]">结束:</span>
+                        <span className="text-[var(--text-title)]">{formatTime(clip.end)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[var(--text-muted)]">类型:</span>
+                        <span className="text-[var(--text-title)]">{selectedClip.type === 'video' ? '视频' : '字幕'}</span>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
             
             {/* Subtitle Style */}
             <div className="mb-6">
@@ -295,7 +491,15 @@ export default function VideoMode() {
               {videoClips.map((clip) => (
                 <div
                   key={clip.id}
-                  className="absolute h-full rounded flex items-center px-2 text-[10px] text-white"
+                  onClick={() => handleSelectClip(clip.id, 'video')}
+                  className={`
+                    absolute h-full rounded flex items-center px-2 text-[10px] text-white cursor-pointer
+                    transition-all duration-150
+                    ${selectedClip?.id === clip.id && selectedClip?.type === 'video' 
+                      ? 'ring-2 ring-white ring-offset-1 ring-offset-[var(--bg-canvas)] brightness-110' 
+                      : 'hover:brightness-110'
+                    }
+                  `}
                   style={{
                     left: `${(clip.start / 200) * 100}%`,
                     width: `${((clip.end - clip.start) / 200) * 100}%`,
@@ -315,7 +519,15 @@ export default function VideoMode() {
               {subtitleClips.map((clip) => (
                 <div
                   key={clip.id}
-                  className="absolute h-full rounded flex items-center px-2 text-[10px] text-white"
+                  onClick={() => handleSelectClip(clip.id, 'subtitle')}
+                  className={`
+                    absolute h-full rounded flex items-center px-2 text-[10px] text-white cursor-pointer
+                    transition-all duration-150
+                    ${selectedClip?.id === clip.id && selectedClip?.type === 'subtitle' 
+                      ? 'ring-2 ring-white ring-offset-1 ring-offset-[var(--bg-canvas)] brightness-110' 
+                      : 'hover:brightness-110'
+                    }
+                  `}
                   style={{
                     left: `${(clip.start / 200) * 100}%`,
                     width: `${((clip.end - clip.start) / 200) * 100}%`,

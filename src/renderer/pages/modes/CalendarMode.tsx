@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Info } from 'lucide-react'
 import { format, startOfWeek, addDays, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, isToday } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 
@@ -20,12 +20,24 @@ interface CalendarSource {
 }
 
 const HOURS = Array.from({ length: 11 }, (_, i) => i + 8) // 8AM to 6PM
+const HOUR_HEIGHT = 60 // Height of each hour in pixels
+const TOTAL_HOURS = 11 // Total hours displayed (8AM to 6PM)
 
 export default function CalendarMode() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [sources, setSources] = useState<CalendarSource[]>([])
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [isMock, setIsMock] = useState(false)
+  const [currentTime, setCurrentTime] = useState(new Date())
+
+  // Update current time every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 60000)
+    return () => clearInterval(timer)
+  }, [])
 
   useEffect(() => {
     loadCalendarData()
@@ -38,20 +50,27 @@ export default function CalendarMode() {
       
       if (typeof window !== 'undefined' && window.electronAPI) {
         const result = await window.electronAPI.calendar.getEvents(start, end)
-        if (result.success && result.events) {
-          setEvents(result.events.map((e: { startTime: string | number | Date; endTime: string | number | Date }) => ({
+        if (result.success && result.data) {
+          setEvents(result.data.map((e: { startTime: string | number | Date; endTime: string | number | Date }) => ({
             ...e,
             startTime: new Date(e.startTime),
             endTime: new Date(e.endTime)
           })))
+          // Set mock mode from API response
+          setIsMock(result.mock === true)
         }
 
         const sourcesResult = await window.electronAPI.calendar.getSources()
-        if (sourcesResult.success && sourcesResult.sources) {
-          setSources(sourcesResult.sources)
+        if (sourcesResult.success && sourcesResult.data) {
+          setSources(sourcesResult.data)
+          // Update mock mode if sources API also returns mock
+          if (sourcesResult.mock === true) {
+            setIsMock(true)
+          }
         }
       } else {
         // Mock data for development
+        setIsMock(true)
         setSources([
           { id: 'work', name: '工作日程', color: '#5B8DEF', enabled: true },
           { id: 'content', name: '内容创作', color: '#E97A2B', enabled: true },
@@ -80,6 +99,10 @@ export default function CalendarMode() {
   const monthEnd = endOfMonth(currentDate)
   const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd })
 
+  // Check if current week contains today
+  const todayInWeek = weekDays.findIndex(day => isToday(day))
+  const hasTodayInWeek = todayInWeek !== -1
+
   const getEventsForDay = (day: Date) => {
     return events.filter(e => isSameDay(e.startTime, day))
   }
@@ -88,8 +111,29 @@ export default function CalendarMode() {
     setSources(sources.map(s => s.id === id ? { ...s, enabled: !s.enabled } : s))
   }
 
+  // Calculate current time line position
+  const getCurrentTimePosition = () => {
+    const hours = currentTime.getHours()
+    const minutes = currentTime.getMinutes()
+    // Only show if within displayed hours (8AM - 6PM)
+    if (hours < 8 || hours > 18) return null
+    return (hours - 8) * HOUR_HEIGHT + (minutes / 60) * HOUR_HEIGHT
+  }
+
+  const currentTimePosition = getCurrentTimePosition()
+
   return (
     <div className="flex flex-col h-full">
+      {/* Mock Mode Badge */}
+      {isMock && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border-b border-amber-200">
+          <Info className="w-4 h-4 text-amber-600" />
+          <span className="text-[12px] text-amber-700">
+            当前处于演示模式，数据为模拟数据
+          </span>
+        </div>
+      )}
+      
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <div 
@@ -136,7 +180,7 @@ export default function CalendarMode() {
                   className={`
                     aspect-square flex items-center justify-center text-[11px] rounded-lg
                     transition-colors
-                    ${isToday(day) ? 'bg-[var(--color-red)] text-white' : 'hover:bg-black/5'}
+                    ${isToday(day) ? 'bg-[var(--color-red)] text-white font-semibold' : 'hover:bg-black/5'}
                     ${selectedDate && isSameDay(day, selectedDate) ? 'ring-2 ring-[var(--color-blue)]' : ''}
                   `}
                 >
@@ -231,7 +275,7 @@ export default function CalendarMode() {
                   isToday(day) ? 'bg-[var(--color-red)]/5' : ''
                 }`}
               >
-                <div className={`text-[11px] ${isToday(day) ? 'text-[var(--color-red)]' : 'text-[var(--text-muted)]'}`}>
+                <div className={`text-[11px] ${isToday(day) ? 'text-[var(--color-red)] font-medium' : 'text-[var(--text-muted)]'}`}>
                   {['周日', '周一', '周二', '周三', '周四', '周五', '周六'][i]}
                 </div>
                 <div className={`text-[14px] font-semibold mt-0.5 ${
@@ -248,21 +292,7 @@ export default function CalendarMode() {
 
           {/* Time Grid */}
           <div className="flex-1 overflow-auto relative">
-            {/* Current Time Line */}
-            {isToday(currentDate) && (
-              <div 
-                className="absolute left-14 right-0 flex items-center z-10 pointer-events-none"
-                style={{ top: `${((new Date().getHours() - 8) * 60 + new Date().getMinutes()) / 600 * 100}%` }}
-              >
-                <div className="w-2 h-2 rounded-full bg-[var(--color-red)] -ml-1" />
-                <div className="flex-1 h-px bg-[var(--color-red)]" />
-                <span className="text-[10px] text-[var(--color-red)] ml-1">
-                  {format(new Date(), 'h:mm a')}
-                </span>
-              </div>
-            )}
-
-            <div className="flex min-h-full">
+            <div className="flex min-h-full relative">
               {/* Time Labels */}
               <div className="w-14 flex-shrink-0 border-r border-[var(--border-default)] bg-[var(--bg-toolbar)]">
                 {HOURS.map(hour => (
@@ -293,21 +323,45 @@ export default function CalendarMode() {
                     />
                   ))}
 
+                  {/* Current Time Line - Only show in today's column */}
+                  {isToday(day) && currentTimePosition !== null && (
+                    <div 
+                      className="absolute left-0 right-0 flex items-center z-20 pointer-events-none"
+                      style={{ top: `${currentTimePosition}px` }}
+                    >
+                      <div className="w-2 h-2 rounded-full bg-[var(--color-red)] -ml-1" />
+                      <div className="flex-1 h-px bg-[var(--color-red)]" />
+                      <span className="text-[10px] text-[var(--color-red)] ml-1 mr-1 bg-white/80 px-1 rounded">
+                        {format(currentTime, 'HH:mm')}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Events */}
                   {getEventsForDay(day).map(event => (
                     <div
                       key={event.id}
-                      className="absolute left-1 right-1 rounded-md px-2 py-1 text-[11px] cursor-pointer hover:brightness-95 transition-all"
+                      className="absolute left-1 right-1 rounded-lg px-2.5 py-1.5 text-[11px] cursor-pointer 
+                        hover:shadow-md hover:scale-[1.02] transition-all duration-200 ease-out
+                        backdrop-blur-sm"
                       style={{
-                        top: `${(event.startTime.getHours() - 8) * 60 + event.startTime.getMinutes()}px`,
-                        height: `${(event.endTime.getTime() - event.startTime.getTime()) / 60000}px`,
-                        background: `${event.color}20`,
+                        top: `${(event.startTime.getHours() - 8) * HOUR_HEIGHT + (event.startTime.getMinutes() / 60) * HOUR_HEIGHT}px`,
+                        height: `${Math.max(
+                          ((event.endTime.getTime() - event.startTime.getTime()) / 60000 / 60) * HOUR_HEIGHT,
+                          24
+                        )}px`,
+                        background: `${event.color}15`,
                         borderLeft: `3px solid ${event.color}`,
-                        color: event.color
+                        borderTop: `1px solid ${event.color}30`,
+                        borderRight: `1px solid ${event.color}30`,
+                        borderBottom: `1px solid ${event.color}30`,
+                        color: event.color,
+                        boxShadow: `0 1px 3px ${event.color}20`
                       }}
                     >
-                      <div className="font-medium truncate">{event.title}</div>
-                      <div className="text-[10px] opacity-70">
+                      <div className="font-semibold truncate leading-tight">{event.title}</div>
+                      <div className="text-[10px] opacity-80 mt-0.5 flex items-center gap-1">
+                        <span className="w-1 h-1 rounded-full bg-current" />
                         {format(event.startTime, 'HH:mm')} - {format(event.endTime, 'HH:mm')}
                       </div>
                     </div>
