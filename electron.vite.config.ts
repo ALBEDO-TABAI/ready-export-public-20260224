@@ -1,6 +1,7 @@
 import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
+// @ts-ignore - @tailwindcss/vite types require bundler moduleResolution
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({

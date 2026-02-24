@@ -8,17 +8,17 @@ interface ChatPanelProps {
 }
 
 export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: ChatPanelProps) {
-  const { 
-    agents, 
-    messages, 
-    currentAgent, 
-    inputValue, 
+  const {
+    agents,
+    messages,
+    currentAgent,
+    inputValue,
     isStreaming,
     selectAgent,
     setInputValue,
-    sendMessage 
+    sendMessage
   } = useAgent()
-  
+
   const [showAgentSelect, setShowAgentSelect] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -31,7 +31,7 @@ export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: Ch
 
   const handleSend = async () => {
     if (!inputValue.trim() || isStreaming) return
-    
+
     const content = inputValue
     setInputValue('')
     await sendMessage(content)
@@ -45,10 +45,10 @@ export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: Ch
   }
 
   return (
-    <div 
+    <div
       className="flex-shrink-0 flex flex-col border-l border-[var(--border-default)]"
-      style={{ 
-        width, 
+      style={{
+        width,
         background: 'var(--bg-panel)',
         boxShadow: '-3px 0 12px rgba(0,0,0,0.06)'
       }}
@@ -70,7 +70,7 @@ export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: Ch
       <div className="flex-1 overflow-auto p-4 space-y-3.5">
         {/* Welcome Card */}
         <div className="flex gap-3">
-          <div 
+          <div
             className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ background: 'var(--bg-canvas)' }}
           >
@@ -88,14 +88,14 @@ export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: Ch
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-2 mt-4">
-          <button 
+          <button
             onClick={() => setInputValue('帮我分析最近的热门视频趋势')}
             className="p-3 rounded-lg border border-[var(--border-default)] bg-white hover:border-[var(--color-blue)] hover:bg-[var(--color-blue-light)] transition-all text-left"
           >
             <div className="text-[12px] font-medium text-[var(--text-title)] mb-1">📊 内容优化</div>
             <div className="text-[11px] text-[var(--text-muted)]">分析热门数据...</div>
           </button>
-          <button 
+          <button
             onClick={() => setInputValue('帮我写一篇关于 AI 创作的文案')}
             className="p-3 rounded-lg border border-[var(--border-default)] bg-white hover:border-[var(--color-blue)] hover:bg-[var(--color-blue-light)] transition-all text-left"
           >
@@ -106,16 +106,15 @@ export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: Ch
 
         {/* Message List */}
         {messages.map((msg) => (
-          <div 
-            key={msg.id} 
+          <div
+            key={msg.id}
             className={`flex gap-3 ${msg.type === 'user' ? 'flex-row-reverse' : ''}`}
           >
-            <div 
-              className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                msg.type === 'user' 
-                  ? 'bg-[var(--color-blue)] text-white' 
+            <div
+              className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${msg.type === 'user'
+                  ? 'bg-[var(--color-blue)] text-white'
                   : 'bg-[var(--bg-canvas)]'
-              }`}
+                }`}
             >
               {msg.type === 'user' ? (
                 <span className="text-[12px] font-medium">我</span>
@@ -123,35 +122,41 @@ export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: Ch
                 <span>{agents.find(a => a.name === msg.agent)?.avatar || '🤖'}</span>
               )}
             </div>
-            <div 
-              className={`max-w-[80%] px-3 py-2 rounded-xl text-[13px] leading-relaxed ${
-                msg.type === 'user'
+            <div
+              className={`max-w-[80%] px-3 py-2 rounded-xl text-[13px] leading-relaxed ${msg.type === 'user'
                   ? 'bg-[var(--color-blue)] text-white'
                   : msg.type === 'system'
-                  ? 'bg-red-50 text-red-600 border border-red-100'
-                  : 'bg-white border border-[var(--border-default)]'
-              }`}
+                    ? 'bg-red-50 text-red-600 border border-red-100'
+                    : 'bg-white border border-[var(--border-default)]'
+                }`}
             >
               {msg.content}
             </div>
           </div>
         ))}
-        
-        {isStreaming && (
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[var(--bg-canvas)] flex items-center justify-center">
-              <span>{currentAgentData?.avatar}</span>
-            </div>
-            <div className="px-3 py-2 rounded-xl bg-white border border-[var(--border-default)]">
-              <div className="flex gap-1">
-                <span className="w-2 h-2 rounded-full bg-[var(--color-blue)] animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-2 h-2 rounded-full bg-[var(--color-blue)] animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-2 h-2 rounded-full bg-[var(--color-blue)] animate-bounce" style={{ animationDelay: '300ms' }} />
+
+        {isStreaming && (() => {
+          const streamMsg = messages.find(m => m.id === (useAgent.getState().streamingMessageId))
+          // Only show bounce dots if the streaming message is empty (hasn't received any chunks yet)
+          if (!streamMsg || streamMsg.content.length === 0) {
+            return (
+              <div className="flex gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[var(--bg-canvas)] flex items-center justify-center">
+                  <span>{currentAgentData?.avatar}</span>
+                </div>
+                <div className="px-3 py-2 rounded-xl bg-white border border-[var(--border-default)]">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 rounded-full bg-[var(--color-blue)] animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 rounded-full bg-[var(--color-blue)] animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 rounded-full bg-[var(--color-blue)] animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        )}
-        
+            )
+          }
+          return null
+        })()}
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -164,11 +169,10 @@ export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: Ch
             <button
               key={agent.name}
               onClick={() => selectAgent(agent.name)}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] transition-colors ${
-                currentAgent === agent.name
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] transition-colors ${currentAgent === agent.name
                   ? 'bg-[var(--color-blue-light)] text-[var(--color-blue)]'
                   : 'bg-[var(--bg-canvas)] text-[var(--text-muted)] hover:bg-[var(--border-default)]'
-              }`}
+                }`}
             >
               <span>{agent.avatar}</span>
               <span>{agent.displayName}</span>
@@ -195,7 +199,7 @@ export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: Ch
               placeholder:text-[var(--text-placeholder)]
               focus:outline-none focus:border-[var(--color-blue)] focus:ring-1 focus:ring-[var(--color-blue)]"
           />
-          
+
           {/* Input Actions */}
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
             <button className="p-1.5 rounded hover:bg-black/5 transition-colors">
@@ -207,7 +211,7 @@ export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: Ch
             <button className="p-1.5 rounded hover:bg-black/5 transition-colors">
               <Paperclip className="w-4 h-4 text-[var(--text-light)]" strokeWidth={2} />
             </button>
-            <button 
+            <button
               onClick={handleSend}
               disabled={!inputValue.trim() || isStreaming}
               className="p-1.5 rounded bg-[var(--color-blue)] text-white hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"

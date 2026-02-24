@@ -22,10 +22,12 @@ interface AgentState {
   currentAgent: string
   inputValue: string
   isStreaming: boolean
+  streamingMessageId: string | null
   setAgents: (agents: Agent[]) => void
   selectAgent: (name: string) => void
   toggleAgentSelection: (name: string) => void
   addMessage: (message: AgentMessage) => void
+  appendToMessage: (id: string, chunk: string) => void
   setInputValue: (value: string) => void
   setIsStreaming: (streaming: boolean) => void
   sendMessage: (content: string) => Promise<void>
@@ -50,13 +52,14 @@ export const useAgent = create<AgentState>((set, get) => ({
   currentAgent: 'butler',
   inputValue: '',
   isStreaming: false,
+  streamingMessageId: null,
 
   setAgents: (agents) => set({ agents }),
 
   selectAgent: (name) => set({ currentAgent: name }),
 
   toggleAgentSelection: (name) => set((state) => ({
-    agents: state.agents.map(a => 
+    agents: state.agents.map(a =>
       a.name === name ? { ...a, selected: !a.selected } : a
     )
   })),
@@ -65,13 +68,19 @@ export const useAgent = create<AgentState>((set, get) => ({
     messages: [...state.messages, message]
   })),
 
+  appendToMessage: (id, chunk) => set((state) => ({
+    messages: state.messages.map(m =>
+      m.id === id ? { ...m, content: m.content + chunk } : m
+    )
+  })),
+
   setInputValue: (value) => set({ inputValue: value }),
 
   setIsStreaming: (streaming) => set({ isStreaming: streaming }),
 
   sendMessage: async (content: string) => {
     const { currentAgent, addMessage, setIsStreaming } = get()
-    
+
     // Add user message
     addMessage({
       id: `msg-${Date.now()}`,
@@ -83,66 +92,110 @@ export const useAgent = create<AgentState>((set, get) => ({
 
     setIsStreaming(true)
 
+    // Create a placeholder for the agent response
+    const responseId = `response-${Date.now()}`
+    addMessage({
+      id: responseId,
+      agent: currentAgent,
+      content: '',
+      type: 'agent',
+      timestamp: new Date()
+    })
+    set({ streamingMessageId: responseId })
+
     try {
-      // Check if electronAPI is available
+      // Check if electronAPI is available (real Electron env)
       if (typeof window !== 'undefined' && window.electronAPI) {
         const result = await window.electronAPI.agent.send(currentAgent, content)
-        
+
         if (!result.success) {
-          addMessage({
-            id: `msg-${Date.now()}`,
-            agent: currentAgent,
-            content: `Error: ${result.error || 'Failed to send message'}`,
-            type: 'system',
-            timestamp: new Date()
-          })
+          // Update the placeholder message with error
+          set((state) => ({
+            messages: state.messages.map(m =>
+              m.id === responseId
+                ? { ...m, content: `⚠️ ${result.error || '发送失败'}`, type: 'system' as const }
+                : m
+            ),
+            isStreaming: false,
+            streamingMessageId: null
+          }))
         }
+        // If success, stream data will arrive via onStream listener
       } else {
-        // Mock response for development
-        setTimeout(() => {
-          addMessage({
-            id: `msg-${Date.now()}`,
-            agent: currentAgent,
-            content: `[Mock] 收到消息: "${content}"\n\n这是一个模拟回复，用于在没有 Electron 环境时测试 UI。`,
-            type: 'agent',
-            timestamp: new Date()
-          })
-          setIsStreaming(false)
-        }, 1000)
+        // Mock response for browser-only development
+        const mockResponses = [
+          `收到你的消息: "${content}"\n\n我正在处理中...这是模拟回复，在 Electron 环境中会连接到 Kimi API。`,
+          `好的，我来帮你处理: "${content}"\n\n当前运行在浏览器预览模式，Agent 功能需要在 Electron 中使用。`,
+          `了解！"${content}" 这个需求我可以帮你完成。\n\n提示：启动 Electron 应用并配置 ANTHROPIC_API_KEY 即可使用真实 AI 能力。`
+        ]
+        const mockReply = mockResponses[Math.floor(Math.random() * mockResponses.length)]
+
+        // Simulate streaming: type out character by character
+        let i = 0
+        const typeInterval = setInterval(() => {
+          if (i < mockReply.length) {
+            const chunk = mockReply.slice(i, i + Math.floor(Math.random() * 3) + 1)
+            get().appendToMessage(responseId, chunk)
+            i += chunk.length
+          } else {
+            clearInterval(typeInterval)
+            set({ isStreaming: false, streamingMessageId: null })
+          }
+        }, 30)
       }
     } catch (error) {
-      addMessage({
-        id: `msg-${Date.now()}`,
-        agent: currentAgent,
-        content: `Error: ${error instanceof Error ? error.message : String(error)}`,
-        type: 'system',
-        timestamp: new Date()
-      })
-      setIsStreaming(false)
+      set((state) => ({
+        messages: state.messages.map(m =>
+          m.id === responseId
+            ? { ...m, content: `❌ 错误: ${error instanceof Error ? error.message : String(error)}`, type: 'system' as const }
+            : m
+        ),
+        isStreaming: false,
+        streamingMessageId: null
+      }))
     }
   }
 }))
 
-// Setup listeners for agent stream output
+// Setup listeners for real Electron agent communication
 if (typeof window !== 'undefined' && window.electronAPI) {
+  // Stream data: accumulate chunks into the current streaming message
   window.electronAPI.agent.onStream((data) => {
-    const { addMessage, setIsStreaming } = useAgent.getState()
-    addMessage({
-      id: `stream-${Date.now()}`,
-      agent: data.agent,
-      content: data.chunk,
-      type: 'agent',
-      timestamp: new Date()
-    })
-    setIsStreaming(false)
+    const { streamingMessageId, appendToMessage, setIsStreaming } = useAgent.getState()
+
+    if (data.type === 'result' || data.type === 'done') {
+      // Stream completed
+      setIsStreaming(false)
+      useAgent.setState({ streamingMessageId: null })
+      return
+    }
+
+    if (streamingMessageId && data.chunk) {
+      appendToMessage(streamingMessageId, data.chunk)
+    }
   })
 
+  // Status changes
   window.electronAPI.agent.onStatusChange((data) => {
     const { agents, setAgents } = useAgent.getState()
     setAgents(
-      agents.map(a => 
+      agents.map(a =>
         a.name === data.agent ? { ...a, status: data.status as Agent['status'] } : a
       )
     )
+  })
+
+  // Error events
+  window.electronAPI.agent.onError((data) => {
+    const { addMessage, setIsStreaming } = useAgent.getState()
+    addMessage({
+      id: `error-${Date.now()}`,
+      agent: data.agent,
+      content: `⚠️ Agent 错误: ${data.error}`,
+      type: 'system',
+      timestamp: new Date()
+    })
+    setIsStreaming(false)
+    useAgent.setState({ streamingMessageId: null })
   })
 }
