@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import TopBar from '../components/layout/TopBar'
 import IconRail from '../components/layout/IconRail'
 import SidePanel from '../components/layout/SidePanel'
+import StatusBar from '../components/layout/StatusBar'
 import ChatPanel from '../components/agent/ChatPanel'
 import BrowserMode from './modes/BrowserMode'
 import DocumentMode from './modes/DocumentMode'
@@ -15,6 +17,7 @@ import { useWorkspace } from '../stores/useWorkspace'
 export default function WorkbenchMode() {
   const { workbenchMode } = useMode()
   const { toggleSidebar, refreshFiles } = useWorkspace()
+  const navigate = useNavigate()
 
   // Initialize workspace on mount
   useEffect(() => {
@@ -27,6 +30,12 @@ export default function WorkbenchMode() {
     }
     initWorkspace()
   }, [refreshFiles])
+
+  const handleIconClick = (icon: string) => {
+    if (icon === 'settings') {
+      navigate('/settings')
+    }
+  }
 
   const renderMode = () => {
     switch (workbenchMode) {
@@ -50,18 +59,20 @@ export default function WorkbenchMode() {
   return (
     <div className="flex flex-col h-full">
       <TopBar onToggleSidebar={toggleSidebar} />
-      
+
       <div className="flex flex-1 overflow-hidden">
-        <IconRail />
+        <IconRail onIconClick={handleIconClick} />
         <SidePanel />
-        
+
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-content)]">
           {renderMode()}
         </div>
-        
+
         <ChatPanel />
       </div>
+
+      <StatusBar />
     </div>
   )
 }
