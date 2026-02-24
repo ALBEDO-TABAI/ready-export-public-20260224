@@ -2,8 +2,11 @@ import { Routes, Route } from 'react-router-dom'
 import WorkbenchMode from './pages/WorkbenchMode'
 import ReadyMode from './pages/ReadyMode'
 import Settings from './pages/Settings'
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 
 function App() {
+  useKeyboardShortcuts()
+
   return (
     <div className="h-screen w-screen flex flex-col bg-[var(--bg-primary)] overflow-hidden">
       <Routes>
