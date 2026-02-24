@@ -18,7 +18,7 @@ const ENABLE_MOCK_SERVICES = process.env.ENABLE_MOCK_SERVICES === 'true'
 const db = new DatabaseManager()
 
 // Initialize agent manager
-const agentManager = new AgentManager()
+const agentManager = new AgentManager(ENABLE_MOCK_SERVICES)
 
 function createWindow(): void {
   // Create the browser window.
@@ -59,6 +59,15 @@ function createWindow(): void {
   setupDocumentIPC(ENABLE_MOCK_SERVICES)
   setupRSSIPC(ENABLE_MOCK_SERVICES)
   setupCalendarIPC(ENABLE_MOCK_SERVICES)
+
+  // Agent management IPC
+  ipcMain.handle('agent:getDiagnostics', () => {
+    return { success: true, data: agentManager.getDiagnostics() }
+  })
+  ipcMain.handle('agent:kill', (_, agent: string) => {
+    const result = agentManager.killAgent(agent)
+    return { success: result, error: result ? undefined : `Agent '${agent}' not found` }
+  })
 
   // Window state IPC
   ipcMain.handle('window:minimize', () => {

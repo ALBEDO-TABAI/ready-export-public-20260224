@@ -289,16 +289,66 @@ export default function DocumentMode() {
 
       <div className="flex-1 overflow-auto">
         <div className="max-w-[800px] mx-auto p-8">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full min-h-[500px] resize-none bg-transparent border-none outline-none
-              text-[15px] leading-relaxed text-[var(--text-body)] font-normal
-              placeholder:text-[var(--text-placeholder)]"
-            placeholder="开始输入..."
-            spellCheck={false}
-            readOnly={isLoading}
-          />
+          {docMode === 'docx' ? (
+            /* DOCX: render the HTML produced by mammoth */
+            <div
+              className="prose prose-sm max-w-none text-[var(--text-body)]
+                [&_h1]:text-[24px] [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:text-[var(--text-title)]
+                [&_h2]:text-[20px] [&_h2]:font-semibold [&_h2]:mb-3 [&_h2]:text-[var(--text-title)]
+                [&_p]:text-[15px] [&_p]:leading-relaxed [&_p]:mb-3
+                [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6
+                [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-[var(--border-default)] [&_td]:px-2 [&_td]:py-1
+                [&_th]:border [&_th]:border-[var(--border-default)] [&_th]:px-2 [&_th]:py-1 [&_th]:bg-[var(--bg-toolbar)]
+                [&_img]:max-w-full [&_img]:rounded"
+              dangerouslySetInnerHTML={{ __html: content }}
+            />
+          ) : docMode === 'xlsx' ? (
+            /* XLSX: styled preview with sheet sections */
+            <div className="text-[14px] text-[var(--text-body)] space-y-4">
+              {content.split(/\n## Sheet: /).map((section, i) => {
+                if (i === 0 && !section.trim()) return null
+                const lines = section.split('\n')
+                const sheetName = i === 0 ? '' : lines[0]
+                const rows = lines.slice(i === 0 ? 0 : 1).filter(l => l.trim())
+                return (
+                  <div key={i} className="border border-[var(--border-default)] rounded-lg overflow-hidden">
+                    {sheetName && (
+                      <div className="bg-[var(--bg-toolbar)] px-3 py-1.5 text-[12px] font-semibold text-[var(--text-title)] border-b border-[var(--border-default)]">
+                        📊 {sheetName}
+                      </div>
+                    )}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-[12px]">
+                        <tbody>
+                          {rows.map((row, ri) => (
+                            <tr key={ri} className={ri === 0 ? 'bg-[var(--bg-toolbar)]' : 'hover:bg-black/[0.02]'}>
+                              {row.split(' | ').map((cell, ci) => (
+                                <td key={ci} className="border border-[var(--border-default)] px-2 py-1 whitespace-nowrap">
+                                  {cell}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            /* Markdown / text: editable textarea */
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="w-full min-h-[500px] resize-none bg-transparent border-none outline-none
+                text-[15px] leading-relaxed text-[var(--text-body)] font-normal
+                placeholder:text-[var(--text-placeholder)]"
+              placeholder="开始输入..."
+              spellCheck={false}
+              readOnly={isLoading || docMode === 'unsupported'}
+            />
+          )}
         </div>
       </div>
 

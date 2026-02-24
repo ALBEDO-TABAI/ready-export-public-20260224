@@ -5,13 +5,21 @@ const agentAPI = {
   send: (agent: string, message: string) => ipcRenderer.invoke('agent:send', { agent, message }),
   orchestrate: (task: string, agents: string[]) =>
     ipcRenderer.invoke('agent:orchestrate', { task, agents }),
-  onStream: (callback: (data: { agent: string; chunk: string }) => void) => {
+  getStatus: (agent: string) => ipcRenderer.invoke('agent:getStatus', agent),
+  getAll: () => ipcRenderer.invoke('agent:getAll'),
+  kill: (agent: string) => ipcRenderer.invoke('agent:kill', agent),
+  getDiagnostics: () => ipcRenderer.invoke('agent:getDiagnostics'),
+  onStream: (callback: (data: { agent: string; chunk: string; type: string }) => void) => {
     ipcRenderer.on('agent:stream', (_, data) => callback(data))
     return () => ipcRenderer.removeAllListeners('agent:stream')
   },
-  onStatusChange: (callback: (data: { agent: string; status: string }) => void) => {
+  onStatusChange: (callback: (data: { agent: string; status: string; isMock: boolean }) => void) => {
     ipcRenderer.on('agent:status', (_, data) => callback(data))
     return () => ipcRenderer.removeAllListeners('agent:status')
+  },
+  onError: (callback: (data: { agent: string; error: string; type: string }) => void) => {
+    ipcRenderer.on('agent:error', (_, data) => callback(data))
+    return () => ipcRenderer.removeAllListeners('agent:error')
   }
 }
 
