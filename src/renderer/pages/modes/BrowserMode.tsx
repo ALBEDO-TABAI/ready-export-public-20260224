@@ -38,13 +38,13 @@ export default function BrowserMode() {
 
   const handleNavigate = () => {
     if (!urlInput.trim() || !activeTab) return
-    
+
     let url = urlInput
     if (!url.startsWith('http')) {
       url = `https://${url}`
     }
-    
-    setTabs(tabs.map(t => 
+
+    setTabs(tabs.map(t =>
       t.id === activeTab.id ? { ...t, url, title: url } : t
     ))
     setUrlInput('')
@@ -53,7 +53,7 @@ export default function BrowserMode() {
   return (
     <div className="flex flex-col h-full">
       {/* Tab Bar */}
-      <div 
+      <div
         className="h-[34px] flex items-center px-2 border-b border-[var(--border-default)]"
         style={{ background: 'var(--bg-toolbar)' }}
       >
@@ -71,8 +71,8 @@ export default function BrowserMode() {
               className={`
                 flex items-center gap-2 px-3 py-1 rounded-md text-[12px] max-w-[160px]
                 transition-all duration-200
-                ${tab.active 
-                  ? 'bg-white border border-[var(--border-default)] shadow-sm' 
+                ${tab.active
+                  ? 'bg-white border border-[var(--border-default)] shadow-sm'
                   : 'hover:bg-black/5'
                 }
               `}
@@ -81,18 +81,19 @@ export default function BrowserMode() {
                 🌐
               </span>
               <span className="truncate flex-1">{tab.title}</span>
-              <button 
+              <span
+                role="button"
                 onClick={(e) => { e.stopPropagation(); handleCloseTab(tab.id) }}
-                className="p-0.5 rounded hover:bg-black/10 transition-colors"
+                className="p-0.5 rounded hover:bg-black/10 transition-colors cursor-pointer"
               >
                 <X className="w-3 h-3" strokeWidth={2} />
-              </button>
+              </span>
             </button>
           ))}
         </div>
 
         {/* New Tab */}
-        <button 
+        <button
           onClick={handleNewTab}
           className="p-1 rounded hover:bg-black/5 transition-colors mx-1"
         >
@@ -101,13 +102,13 @@ export default function BrowserMode() {
 
         {/* Split View */}
         <div className="relative">
-          <button 
+          <button
             onClick={() => setShowSplitMenu(!showSplitMenu)}
             className="p-1 rounded hover:bg-black/5 transition-colors"
           >
             <Split className="w-4 h-4 text-[var(--text-muted)]" strokeWidth={2} />
           </button>
-          
+
           {showSplitMenu && (
             <div className="absolute right-0 top-full mt-1 py-1 bg-white rounded-lg shadow-lg border border-[var(--border-default)] z-10">
               <button className="flex items-center gap-2 px-3 py-1.5 text-[12px] hover:bg-black/5 w-full text-left">
@@ -128,7 +129,7 @@ export default function BrowserMode() {
       </div>
 
       {/* Address Bar */}
-      <div 
+      <div
         className="h-[38px] flex items-center px-3 border-b border-[var(--border-default)]"
         style={{ background: 'var(--bg-content)' }}
       >
