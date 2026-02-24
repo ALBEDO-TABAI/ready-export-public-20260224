@@ -267,10 +267,16 @@ export class AgentManager extends EventEmitter {
   private createClaudeProcess(worktreePath: string, task: string): ChildProcess {
     const proc = spawn(
       'claude',
-      ['--print', '--output-format', 'stream-json'],
+      ['--print', '--verbose', '--output-format', 'stream-json'],
       {
         cwd: worktreePath,
-        env: { ...process.env, CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1' }
+        env: {
+          ...process.env,
+          CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
+          // Kimi API configuration (can be overridden by process.env)
+          ANTHROPIC_BASE_URL: process.env.ANTHROPIC_BASE_URL || 'https://api.kimi.com/coding/',
+          ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || ''
+        }
       }
     )
 
