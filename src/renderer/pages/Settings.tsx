@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { 
-  ChevronLeft, User, Bell, Shield, Database, 
-  Palette, Keyboard, Globe, Info, Moon, Sun 
+import {
+  ChevronLeft, User, Bell, Shield, Database,
+  Palette, Keyboard, Globe, Info, Moon, Sun, Bot
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -28,6 +28,18 @@ const settingsData: SettingSection[] = [
     settings: [
       { id: 'username', label: '用户名', type: 'text', value: 'Ready User' },
       { id: 'email', label: '邮箱', type: 'text', value: 'user@ready.app' }
+    ]
+  },
+  {
+    id: 'ai',
+    title: 'AI 模型',
+    icon: Bot,
+    settings: [
+      { id: 'apiProvider', label: 'API 提供商', type: 'select', value: 'kimi', options: ['kimi', 'anthropic', 'openai-compatible'] },
+      { id: 'apiBaseUrl', label: 'API 地址', type: 'text', value: 'https://api.kimi.com/coding/' },
+      { id: 'apiKey', label: 'API Key', type: 'text', value: 'sk-kimi-••••••••' },
+      { id: 'model', label: '默认模型', type: 'select', value: 'kimi-for-coding', options: ['kimi-for-coding', 'claude-sonnet-4-6', 'claude-haiku'] },
+      { id: 'testConnection', label: '测试连接', type: 'button' }
     ]
   },
   {
@@ -102,14 +114,14 @@ export default function Settings() {
   const currentSection = settings.find(s => s.id === activeSection)
 
   const updateSetting = (sectionId: string, settingId: string, value: boolean | string) => {
-    setSettings(settings.map(section => 
-      section.id === sectionId 
+    setSettings(settings.map(section =>
+      section.id === sectionId
         ? {
-            ...section,
-            settings: section.settings.map(s => 
-              s.id === settingId ? { ...s, value } : s
-            )
-          }
+          ...section,
+          settings: section.settings.map(s =>
+            s.id === settingId ? { ...s, value } : s
+          )
+        }
         : section
     ))
   }
@@ -117,11 +129,11 @@ export default function Settings() {
   return (
     <div className="flex flex-col h-full bg-[var(--bg-content)]">
       {/* Header */}
-      <div 
+      <div
         className="h-[38px] flex items-center px-3 border-b border-[var(--border-default)]"
         style={{ background: 'var(--bg-panel)' }}
       >
-        <button 
+        <button
           onClick={() => navigate('/')}
           className="p-1.5 rounded hover:bg-black/5 transition-colors mr-2"
         >
@@ -133,7 +145,7 @@ export default function Settings() {
       {/* Settings Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}
-        <div 
+        <div
           className="w-[200px] flex-shrink-0 border-r border-[var(--border-default)] overflow-auto"
           style={{ background: 'var(--bg-panel)' }}
         >
@@ -144,8 +156,8 @@ export default function Settings() {
               className={`
                 w-full flex items-center gap-3 px-4 py-3 text-left
                 transition-colors
-                ${activeSection === section.id 
-                  ? 'bg-[var(--color-blue-light)] text-[var(--color-blue)]' 
+                ${activeSection === section.id
+                  ? 'bg-[var(--color-blue-light)] text-[var(--color-blue)]'
                   : 'hover:bg-black/5 text-[var(--text-body)]'
                 }
               `}
@@ -166,12 +178,12 @@ export default function Settings() {
 
               <div className="space-y-4 max-w-[500px]">
                 {currentSection.settings.map((setting) => (
-                  <div 
+                  <div
                     key={setting.id}
                     className="flex items-center justify-between py-3 border-b border-[var(--border-default)]"
                   >
                     <span className="text-[13px] text-[var(--text-body)]">{setting.label}</span>
-                    
+
                     {setting.type === 'toggle' && (
                       <button
                         onClick={() => updateSetting(currentSection.id, setting.id, !setting.value)}
@@ -180,7 +192,7 @@ export default function Settings() {
                           ${setting.value ? 'bg-[var(--color-green)]' : 'bg-[var(--border-input)]'}
                         `}
                       >
-                        <span 
+                        <span
                           className={`
                             absolute top-1 w-4 h-4 rounded-full bg-white transition-transform
                             ${setting.value ? 'left-6' : 'left-1'}
@@ -190,7 +202,7 @@ export default function Settings() {
                     )}
 
                     {setting.type === 'select' && (
-                      <select 
+                      <select
                         value={setting.value as string}
                         onChange={(e) => updateSetting(currentSection.id, setting.id, e.target.value)}
                         className="px-3 py-1.5 rounded-lg border border-[var(--border-input)] text-[12px] bg-white"

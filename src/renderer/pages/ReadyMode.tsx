@@ -8,6 +8,9 @@ import DocumentMode from './modes/DocumentMode'
 import ImageMode from './modes/ImageMode'
 import VideoMode from './modes/VideoMode'
 
+import RSSMode from './modes/RSSMode'
+import CalendarMode from './modes/CalendarMode'
+
 interface Task {
   id: string
   title: string
@@ -27,7 +30,9 @@ export default function ReadyMode() {
     { id: 'browser', label: '浏览器', icon: '🌐' },
     { id: 'document', label: '文档', icon: '📄' },
     { id: 'image', label: '图像', icon: '🖼️' },
-    { id: 'video', label: '剪辑', icon: '✂️' }
+    { id: 'video', label: '剪辑', icon: '✂️' },
+    { id: 'rss', label: 'RSS', icon: '📰' },
+    { id: 'calendar', label: '日程', icon: '📅' }
   ]
 
   const renderSubMode = () => {
@@ -40,6 +45,10 @@ export default function ReadyMode() {
         return <ImageMode />
       case 'video':
         return <VideoMode />
+      case 'rss':
+        return <RSSMode />
+      case 'calendar':
+        return <CalendarMode />
       default:
         return <BrowserMode />
     }
@@ -54,13 +63,13 @@ export default function ReadyMode() {
   return (
     <div className="flex flex-col h-full">
       {/* Top Bar */}
-      <div 
+      <div
         className="h-[40px] flex items-center justify-between px-4 border-b border-[var(--border-default)]"
         style={{ background: 'var(--bg-panel)' }}
       >
         <div className="flex items-center gap-4">
           <ModeSlider />
-          
+
           {/* Sub Mode Tabs */}
           <div className="flex items-center gap-1">
             <button className="px-2.5 py-1 rounded-lg bg-[var(--color-green-light)] text-[var(--color-green)] text-[12px]">
@@ -72,8 +81,8 @@ export default function ReadyMode() {
                 onClick={() => setReadySubMode(mode.id as typeof readySubMode)}
                 className={`
                   flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] transition-all
-                  ${readySubMode === mode.id 
-                    ? 'bg-[var(--color-blue-light)] text-[var(--color-blue)]' 
+                  ${readySubMode === mode.id
+                    ? 'bg-[var(--color-blue-light)] text-[var(--color-blue)]'
                     : 'hover:bg-black/5 text-[var(--text-muted)]'
                   }
                 `}
@@ -98,7 +107,7 @@ export default function ReadyMode() {
       {/* Four Panel Layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Task Panel */}
-        <div 
+        <div
           className="w-[200px] flex-shrink-0 border-r border-[var(--border-default)] flex flex-col"
           style={{ background: 'var(--bg-panel)' }}
         >
@@ -117,11 +126,11 @@ export default function ReadyMode() {
             </h3>
             <div className="space-y-1">
               {agents.map(agent => (
-                <label 
+                <label
                   key={agent.name}
                   className="flex items-center gap-2 cursor-pointer hover:bg-black/5 p-1.5 rounded transition-colors"
                 >
-                  <input 
+                  <input
                     type="checkbox"
                     checked={agent.selected}
                     onChange={() => toggleAgentSelection(agent.name)}
@@ -141,7 +150,7 @@ export default function ReadyMode() {
             </h3>
             <div className="space-y-2">
               {tasks.map(task => (
-                <div 
+                <div
                   key={task.id}
                   className="p-2 rounded-lg bg-white border border-[var(--border-default)] text-[12px]"
                 >
@@ -166,7 +175,7 @@ export default function ReadyMode() {
             <div className="flex items-center gap-1 flex-wrap mb-2">
               <span className="text-[11px] text-[var(--text-light)]">@</span>
               {agents.filter(a => a.selected).map(agent => (
-                <span 
+                <span
                   key={agent.name}
                   className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[var(--color-blue-light)] text-[var(--color-blue)] text-[10px]"
                 >
@@ -185,7 +194,7 @@ export default function ReadyMode() {
                   placeholder:text-[var(--text-placeholder)]
                   focus:outline-none focus:border-[var(--color-blue)]"
               />
-              <button 
+              <button
                 onClick={handleSend}
                 disabled={!inputValue.trim()}
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded bg-[var(--color-blue)] text-white disabled:opacity-50"
@@ -197,7 +206,7 @@ export default function ReadyMode() {
         </div>
 
         {/* Meeting Chat */}
-        <div 
+        <div
           className="w-[420px] flex-shrink-0 border-r border-[var(--border-default)] flex flex-col"
           style={{ background: 'var(--bg-panel)' }}
         >
@@ -239,7 +248,7 @@ export default function ReadyMode() {
         </div>
 
         {/* File Panel */}
-        <div 
+        <div
           className="w-[180px] flex-shrink-0 border-l border-[var(--border-default)] flex flex-col"
           style={{ background: 'var(--bg-panel)' }}
         >
