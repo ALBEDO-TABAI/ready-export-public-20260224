@@ -1,3 +1,9 @@
+import { config } from 'dotenv'
+import { resolve } from 'path'
+
+// Load .env from project root (before anything else)
+config({ path: resolve(__dirname, '../../.env') })
+
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'

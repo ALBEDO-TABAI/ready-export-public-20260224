@@ -175,12 +175,46 @@ export class AgentManager extends EventEmitter {
         }
       }, this.agentTimeoutMs)
 
+      // Buffer for incomplete JSON lines
+      let lineBuffer = ''
+
       proc.stdout?.on('data', (chunk: Buffer) => {
-        this.emit('output', { agent: name, chunk: chunk.toString(), type: 'stdout' })
+        lineBuffer += chunk.toString()
+        const lines = lineBuffer.split('\n')
+        // Keep the last potentially incomplete line in the buffer
+        lineBuffer = lines.pop() || ''
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed) continue
+          try {
+            const json = JSON.parse(trimmed)
+            // Extract text content from stream-json format
+            if (json.type === 'assistant' && json.message?.content) {
+              for (const block of json.message.content) {
+                if (block.type === 'text' && block.text) {
+                  this.emit('output', { agent: name, chunk: block.text, type: 'text' })
+                }
+              }
+            } else if (json.type === 'result') {
+              // Stream completed — send the final result text
+              if (json.result) {
+                this.emit('output', { agent: name, chunk: '', type: 'done' })
+              }
+            }
+            // Ignore 'system' init messages and thinking blocks
+          } catch {
+            // Non-JSON line — forward raw text (e.g. mock process output)
+            this.emit('output', { agent: name, chunk: trimmed, type: 'stdout' })
+          }
+        }
       })
 
       proc.stderr?.on('data', (chunk: Buffer) => {
-        this.emit('output', { agent: name, chunk: chunk.toString(), type: 'stderr' })
+        const text = chunk.toString().trim()
+        if (text) {
+          this.emit('output', { agent: name, chunk: text, type: 'stderr' })
+        }
       })
 
       proc.on('close', (code) => {
