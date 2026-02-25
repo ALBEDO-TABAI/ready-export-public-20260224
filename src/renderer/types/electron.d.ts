@@ -70,6 +70,7 @@ interface ElectronAPI {
   calendar: ElectronCalendarAPI
   window: ElectronWindowAPI
   platform: string
+  getFilePathFromDrop: (file: File) => string
 }
 
 declare global {

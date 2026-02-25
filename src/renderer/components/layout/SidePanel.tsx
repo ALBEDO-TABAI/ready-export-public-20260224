@@ -376,13 +376,14 @@ export default function SidePanel() {
     const targetDir = currentPath || workspaceRoot
     if (!targetDir) return
 
-    const files = e.dataTransfer.files
-    if (!files || files.length === 0) return
+    const droppedFiles = e.dataTransfer.files
+    if (!droppedFiles || droppedFiles.length === 0) return
 
     if (typeof window !== 'undefined' && window.electronAPI) {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i]
-        const srcPath = (file as File & { path?: string }).path
+      for (let i = 0; i < droppedFiles.length; i++) {
+        const file = droppedFiles[i]
+        // Use Electron's webUtils.getPathForFile via preload
+        const srcPath = window.electronAPI.getFilePathFromDrop(file)
         if (!srcPath) continue
         const fileName = srcPath.split('/').pop() || file.name
         const destPath = `${targetDir}/${fileName}`

@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
 // Agent API
 const agentAPI = {
@@ -89,7 +89,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   rss: rssAPI,
   calendar: calendarAPI,
   window: windowAPI,
-  platform: process.platform
+  platform: process.platform,
+  // Utility for drag-and-drop: get real file path from File object
+  getFilePathFromDrop: (file: File) => webUtils.getPathForFile(file),
 })
 
 // Type declarations for renderer
@@ -103,6 +105,7 @@ declare global {
       calendar: typeof calendarAPI
       window: typeof windowAPI
       platform: string
+      getFilePathFromDrop: (file: File) => string
     }
   }
 }
