@@ -16,6 +16,7 @@ interface WorkspaceState {
   selectedFile: string | null
   expandedDirs: Set<string>
   dirChildren: Map<string, FileItem[]>
+  pinnedFolders: string[]
   sidebarVisible: boolean
   sidebarWidth: number
   chatPanelVisible: boolean
@@ -37,9 +38,11 @@ interface WorkspaceState {
   setWorkspaceRoot: (path: string) => void
   clearWorkspace: () => void
   openFolderDialog: () => Promise<void>
+  addPinnedFolder: (path: string) => void
+  removePinnedFolder: (path: string) => void
   saveWorkspace: (name: string) => void
-  getSavedWorkspaces: () => { name: string; root: string }[]
-  loadSavedWorkspace: (root: string) => void
+  getSavedWorkspaces: () => { name: string; folders: string[] }[]
+  loadSavedWorkspace: (folders: string[]) => void
   deleteSavedWorkspace: (name: string) => void
 
   // File operations
@@ -70,6 +73,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   selectedFile: null,
   expandedDirs: new Set<string>(),
   dirChildren: new Map<string, FileItem[]>(),
+  pinnedFolders: JSON.parse(localStorage.getItem('ready-pinned-folders') || '[]') as string[],
   sidebarVisible: true,
   sidebarWidth: 220,
   chatPanelVisible: true,
@@ -148,32 +152,60 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       selectedFile: null,
       expandedDirs: new Set(),
       dirChildren: new Map(),
+      pinnedFolders: [],
       renamingPath: null,
       creatingType: null,
     })
     localStorage.removeItem('ready-workspace-root')
+    localStorage.removeItem('ready-pinned-folders')
+  },
+
+  addPinnedFolder: (path) => {
+    const { pinnedFolders } = get()
+    if (pinnedFolders.includes(path)) return
+    const next = [...pinnedFolders, path]
+    set({ pinnedFolders: next })
+    localStorage.setItem('ready-pinned-folders', JSON.stringify(next))
+  },
+
+  removePinnedFolder: (path) => {
+    const { pinnedFolders } = get()
+    const next = pinnedFolders.filter(p => p !== path)
+    set({ pinnedFolders: next })
+    localStorage.setItem('ready-pinned-folders', JSON.stringify(next))
   },
 
   saveWorkspace: (name) => {
-    const { workspaceRoot } = get()
-    if (!workspaceRoot) return
-    const saved = JSON.parse(localStorage.getItem('ready-saved-workspaces') || '[]') as { name: string; root: string }[]
-    // Avoid duplicates
+    const { pinnedFolders } = get()
+    if (pinnedFolders.length === 0) return
+    const saved = JSON.parse(localStorage.getItem('ready-saved-workspaces') || '[]') as { name: string; folders: string[] }[]
     const filtered = saved.filter(w => w.name !== name)
-    filtered.push({ name, root: workspaceRoot })
+    filtered.push({ name, folders: [...pinnedFolders] })
     localStorage.setItem('ready-saved-workspaces', JSON.stringify(filtered))
   },
 
   getSavedWorkspaces: () => {
-    return JSON.parse(localStorage.getItem('ready-saved-workspaces') || '[]') as { name: string; root: string }[]
+    return JSON.parse(localStorage.getItem('ready-saved-workspaces') || '[]') as { name: string; folders: string[] }[]
   },
 
-  loadSavedWorkspace: (root) => {
-    get().setWorkspaceRoot(root)
+  loadSavedWorkspace: (folders) => {
+    set({
+      pinnedFolders: folders,
+      expandedDirs: new Set(),
+      dirChildren: new Map(),
+      selectedFile: null,
+      workspaceRoot: folders[0] || null,
+      currentPath: folders[0] || '/',
+    })
+    localStorage.setItem('ready-pinned-folders', JSON.stringify(folders))
+    if (folders[0]) {
+      localStorage.setItem('ready-workspace-root', folders[0])
+    }
+    get().refreshFiles()
   },
 
   deleteSavedWorkspace: (name) => {
-    const saved = JSON.parse(localStorage.getItem('ready-saved-workspaces') || '[]') as { name: string; root: string }[]
+    const saved = JSON.parse(localStorage.getItem('ready-saved-workspaces') || '[]') as { name: string; folders: string[] }[]
     const filtered = saved.filter(w => w.name !== name)
     localStorage.setItem('ready-saved-workspaces', JSON.stringify(filtered))
   },
@@ -183,7 +215,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       if (window.electronAPI) {
         const result = await window.electronAPI.document.openFolder()
         if (result.success && result.path) {
-          get().setWorkspaceRoot(result.path)
+          get().addPinnedFolder(result.path)
         }
       }
     } catch (error) {

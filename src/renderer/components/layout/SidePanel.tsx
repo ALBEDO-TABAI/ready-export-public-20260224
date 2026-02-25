@@ -284,6 +284,9 @@ export default function SidePanel() {
     saveWorkspace,
     getSavedWorkspaces,
     loadSavedWorkspace,
+    pinnedFolders,
+    addPinnedFolder,
+    removePinnedFolder,
   } = useWorkspace()
 
   const { setWorkbenchMode } = useMode()
@@ -396,41 +399,12 @@ export default function SidePanel() {
     if (!droppedFiles || droppedFiles.length === 0) return
 
     if (typeof window !== 'undefined' && window.electronAPI) {
-      // Collect all dropped paths
-      const droppedPaths: string[] = []
       for (let i = 0; i < droppedFiles.length; i++) {
         const p = window.electronAPI.getFilePathFromDrop(droppedFiles[i])
-        if (p) droppedPaths.push(p)
+        if (p) addPinnedFolder(p)
       }
-      if (droppedPaths.length === 0) return
-
-      // Check if any dropped item is a directory (via stat)
-      // For simplicity: use the parent directory of all dropped paths as the new root
-      // This way each dropped folder/file appears as an entry in the file tree
-      const parents = droppedPaths.map(p => {
-        const idx = p.lastIndexOf('/')
-        return idx > 0 ? p.slice(0, idx) : '/'
-      })
-
-      // Find the common parent of all dropped items
-      const commonParent = parents.reduce((common, parent) => {
-        if (!common) return parent
-        // Find common prefix
-        const parts1 = common.split('/')
-        const parts2 = parent.split('/')
-        const shared: string[] = []
-        for (let i = 0; i < Math.min(parts1.length, parts2.length); i++) {
-          if (parts1[i] === parts2[i]) shared.push(parts1[i])
-          else break
-        }
-        return shared.join('/') || '/'
-      }, '')
-
-      // Set workspace root to the common parent so all dropped items appear as entries
-      const { setWorkspaceRoot: setRoot } = useWorkspace.getState()
-      setRoot(commonParent)
     }
-  }, [])
+  }, [addPinnedFolder])
 
   const displayPath = currentPath === workspaceRoot
     ? currentPath.split('/').pop() || currentPath
@@ -520,8 +494,9 @@ export default function SidePanel() {
                 </button>
                 <button
                   onClick={() => {
-                    if (!workspaceRoot) return alert('当前没有打开的工作区')
-                    const name = prompt('工作区名称：', workspaceRoot.split('/').pop() || '我的工作区')
+                    if (pinnedFolders.length === 0) return alert('当前没有打开的工作区')
+                    const defaultName = pinnedFolders.map(p => p.split('/').pop()).join(' + ') || '我的工作区'
+                    const name = prompt('工作区名称：', defaultName)
                     if (name) {
                       saveWorkspace(name)
                       alert(`工作区 "${name}" 已保存`)
@@ -543,7 +518,7 @@ export default function SidePanel() {
                     {getSavedWorkspaces().map(w => (
                       <button
                         key={w.name}
-                        onClick={() => loadSavedWorkspace(w.root)}
+                        onClick={() => loadSavedWorkspace(w.folders)}
                         className="w-full text-left px-3 py-1.5 text-[12px] hover:bg-black/5 flex items-center gap-2 group"
                       >
                         <FolderOpen className="w-3.5 h-3.5 text-[var(--color-blue)]" />
@@ -640,10 +615,63 @@ export default function SidePanel() {
           </div>
         )}
 
-        {filteredFiles.length === 0 && !creatingType ? (
+        {pinnedFolders.length > 0 ? (
+          /* Render pinned folders as top-level expandable entries */
+          pinnedFolders.map(folderPath => {
+            const folderName = folderPath.split('/').pop() || folderPath
+            const isExpanded = expandedDirs.has(folderPath)
+            const children = dirChildren.get(folderPath) || []
+            const pinnedItem: FileItem = {
+              name: folderName,
+              path: folderPath,
+              isDirectory: true,
+              size: 0,
+              modified: new Date(),
+            }
+            return (
+              <div key={folderPath}>
+                <FileTreeItem
+                  item={pinnedItem}
+                  isActive={selectedFile === folderPath}
+                  isExpanded={isExpanded}
+                  isRenaming={renamingPath === folderPath}
+                  depth={0}
+                  onToggleDir={() => toggleDir(folderPath)}
+                  onOpenFile={() => { }}
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setContextMenu({ x: e.clientX, y: e.clientY, item: pinnedItem })
+                  }}
+                  onRenameConfirm={(newName) => renameItem(folderPath, newName)}
+                  onRenameCancel={cancelRenaming}
+                />
+                {isExpanded && children.length > 0 && (
+                  <FileTreeRecursive
+                    items={children}
+                    depth={1}
+                    selectedFile={selectedFile}
+                    expandedDirs={expandedDirs}
+                    dirChildren={dirChildren}
+                    renamingPath={renamingPath}
+                    onToggleDir={toggleDir}
+                    onOpenFile={handleOpenFile}
+                    onContextMenu={(e, item) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setContextMenu({ x: e.clientX, y: e.clientY, item })
+                    }}
+                    onRenameConfirm={(path, newName) => renameItem(path, newName)}
+                    onRenameCancel={cancelRenaming}
+                  />
+                )}
+              </div>
+            )
+          })
+        ) : filteredFiles.length === 0 && !creatingType ? (
           <div className="flex flex-col items-center justify-center h-32 text-[var(--text-light)]">
-            <Folder className="w-8 h-8 mb-2 opacity-50" />
-            <span className="text-[11px]">{files.length === 0 ? '暂无文件' : '未找到匹配文件'}</span>
+            <FolderOpenIcon className="w-8 h-8 mb-2 opacity-50" />
+            <span className="text-[11px]">拖入文件夹或点击打开文件夹</span>
           </div>
         ) : (
           <FileTreeRecursive
