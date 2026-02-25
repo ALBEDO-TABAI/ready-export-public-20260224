@@ -288,6 +288,18 @@ export default function SidePanel() {
 
   const { setWorkbenchMode } = useMode()
 
+  // Close workspace menu on click outside
+  useEffect(() => {
+    if (!showWorkspaceMenu) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (workspaceMenuRef.current && !workspaceMenuRef.current.contains(e.target as Node)) {
+        setShowWorkspaceMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showWorkspaceMenu])
+
   const parentPath = useMemo(() => {
     if (!workspaceRoot || currentPath === workspaceRoot) return null
     const normalized = currentPath.replace(/\/+$/, '') || '/'
