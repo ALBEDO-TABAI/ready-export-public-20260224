@@ -310,13 +310,6 @@ export default function SidePanel() {
           >
             <FolderOpenIcon className="w-3.5 h-3.5" />
           </button>
-          <button
-            onClick={toggleSidebar}
-            title="收起文件管理"
-            className="p-1 rounded hover:bg-black/5 text-[var(--text-gray)]"
-          >
-            <PanelLeftClose className="w-3.5 h-3.5" />
-          </button>
         </div>
       </div>
 

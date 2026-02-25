@@ -1,13 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { History, Minus, AtSign, Plus, Send, ChevronDown, Maximize2 } from 'lucide-react'
 import { useAgent } from '../../stores/useAgent'
+import { useWorkspace } from '../../stores/useWorkspace'
 
-interface ChatPanelProps {
-  width?: number
-  title?: string
-}
-
-export default function ChatPanel({ width = 380, title = 'New Task' }: ChatPanelProps) {
+export default function ChatPanel() {
   const {
     agents,
     messages,
@@ -18,6 +14,8 @@ export default function ChatPanel({ width = 380, title = 'New Task' }: ChatPanel
     setInputValue,
     sendMessage
   } = useAgent()
+
+  const { chatPanelVisible, chatPanelWidth } = useWorkspace()
 
   const [showAgentSelect, setShowAgentSelect] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -46,12 +44,14 @@ export default function ChatPanel({ width = 380, title = 'New Task' }: ChatPanel
 
   return (
     <div
-      className="flex-shrink-0 flex flex-col"
+      className="flex-shrink-0 flex flex-col overflow-hidden"
       style={{
-        width,
+        width: chatPanelVisible ? chatPanelWidth : 0,
+        minWidth: chatPanelVisible ? chatPanelWidth : 0,
         background: 'var(--bg-panel)',
-        borderLeft: '1px solid var(--border-default)',
-        boxShadow: '-3px 0 12px rgba(0,0,0,0.06)'
+        borderLeft: chatPanelVisible ? '1px solid var(--border-default)' : 'none',
+        boxShadow: chatPanelVisible ? '-3px 0 12px rgba(0,0,0,0.06)' : 'none',
+        transition: 'width 0.2s ease, min-width 0.2s ease',
       }}
     >
       {/* Header — chatHead */}
@@ -59,7 +59,7 @@ export default function ChatPanel({ width = 380, title = 'New Task' }: ChatPanel
         className="flex items-center justify-between"
         style={{ height: 38, padding: '0 14px', borderBottom: '1px solid var(--border-default)' }}
       >
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-title)' }}>{title}</span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-title)' }}>New Task</span>
         <div className="flex items-center" style={{ gap: 6 }}>
           <button className="p-1 rounded hover:bg-black/5 transition-colors">
             <History style={{ width: 14, height: 14 }} className="text-[#999999]" strokeWidth={2} />

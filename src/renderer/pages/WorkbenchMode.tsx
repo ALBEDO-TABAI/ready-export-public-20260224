@@ -101,6 +101,8 @@ export default function WorkbenchMode() {
   const handleIconClick = (icon: string) => {
     if (icon === 'settings') {
       navigate('/settings')
+    } else if (icon === 'folder') {
+      toggleSidebar()
     }
   }
 
