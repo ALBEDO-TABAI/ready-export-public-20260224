@@ -125,7 +125,7 @@ function DocumentEditor({ tab }: { tab: DocTab }) {
   const canSave = isMarkdown && !!tab.path
   const renderedHtml = useMemo(() => renderMarkdown(tab.content), [tab.content])
   const [imageZoom, setImageZoom] = useState(100)
-  const fileUrl = tab.path ? `file://${tab.path}` : ''
+  const fileUrl = tab.path ? `local-file://${tab.path}` : ''
 
   // Load file content on mount / path change
   useEffect(() => {

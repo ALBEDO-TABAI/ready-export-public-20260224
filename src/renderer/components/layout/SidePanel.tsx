@@ -327,8 +327,9 @@ export default function SidePanel() {
     const modeMap: Record<string, WorkbenchMode> = {
       md: 'document', txt: 'document', json: 'document', ts: 'document', tsx: 'document',
       js: 'document', css: 'document', html: 'document', docx: 'document', xlsx: 'document',
-      png: 'image', jpg: 'image', jpeg: 'image', webp: 'image', svg: 'image', gif: 'image',
-      mp4: 'video', mov: 'video', mkv: 'video', avi: 'video', webm: 'video'
+      png: 'document', jpg: 'document', jpeg: 'document', webp: 'document', svg: 'document', gif: 'document',
+      bmp: 'document', ico: 'document',
+      mp4: 'document', mov: 'document', mkv: 'document', avi: 'document', webm: 'document', ogg: 'document'
     }
     if (modeMap[ext]) {
       setWorkbenchMode(modeMap[ext])
