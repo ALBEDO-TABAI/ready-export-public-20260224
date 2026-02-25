@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, BrowserView } from 'electron'
+import { ipcMain, BrowserWindow, BrowserView, session, shell } from 'electron'
 
 interface Tab {
   id: string
@@ -41,6 +41,11 @@ export function setupBrowserIPC(mainWindow: BrowserWindow, useMock = false): voi
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
+          // Persist cookies/localStorage/session across restarts (enables Google login etc.)
+          partition: 'persist:browser',
+          spellcheck: true,
+          // Allow the page to use media devices
+          webSecurity: true,
         }
       })
 
@@ -93,6 +98,12 @@ export function setupBrowserIPC(mainWindow: BrowserWindow, useMock = false): voi
         })
       })
 
+      // Open external links (target=_blank) in system browser
+      view.webContents.setWindowOpenHandler(({ url: linkUrl }) => {
+        shell.openExternal(linkUrl)
+        return { action: 'deny' }
+      })
+
       // Hide old active view, show new one
       if (activeTabId) {
         const oldTab = tabs.get(activeTabId)
@@ -106,6 +117,9 @@ export function setupBrowserIPC(mainWindow: BrowserWindow, useMock = false): voi
 
       // Load URL after setup
       await view.webContents.loadURL(url)
+
+      // Focus the BrowserView so it receives keyboard/scroll events
+      view.webContents.focus()
 
       return { success: true, tabId, title: tab.title }
     } catch (error) {
@@ -157,6 +171,9 @@ export function setupBrowserIPC(mainWindow: BrowserWindow, useMock = false): voi
       mainWindow.addBrowserView(newTab.view)
       applyBounds(newTab.view)
       activeTabId = tabId
+
+      // Focus the BrowserView so it receives keyboard/scroll events
+      newTab.view.webContents.focus()
 
       return {
         success: true,
@@ -252,6 +269,8 @@ export function setupBrowserIPC(mainWindow: BrowserWindow, useMock = false): voi
       if (tab?.view) {
         mainWindow.addBrowserView(tab.view)
         applyBounds(tab.view)
+        // Focus so keyboard/scroll works immediately
+        tab.view.webContents.focus()
       }
     }
     return { success: true }
