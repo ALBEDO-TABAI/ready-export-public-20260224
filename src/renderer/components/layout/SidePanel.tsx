@@ -2,7 +2,7 @@ import { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import {
   ArrowLeft, RefreshCw, ChevronRight, ChevronDown, Search,
   FileText, Folder, FolderOpen, Image, Film, FileSpreadsheet,
-  FilePlus, FolderPlus, FolderOpen as FolderOpenIcon
+  FilePlus, FolderPlus, FolderOpen as FolderOpenIcon, PanelLeftClose
 } from 'lucide-react'
 import { useWorkspace, type FileItem } from '../../stores/useWorkspace'
 import { useMode, type WorkbenchMode } from '../../stores/useMode'
@@ -153,6 +153,7 @@ export default function SidePanel() {
     files,
     sidebarVisible,
     sidebarWidth,
+    toggleSidebar,
     currentPath,
     workspaceRoot,
     selectedFile,
@@ -308,6 +309,13 @@ export default function SidePanel() {
             className="p-1 rounded hover:bg-black/5 text-[var(--text-gray)]"
           >
             <FolderOpenIcon className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={toggleSidebar}
+            title="收起文件管理"
+            className="p-1 rounded hover:bg-black/5 text-[var(--text-gray)]"
+          >
+            <PanelLeftClose className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

@@ -22,38 +22,39 @@ function ResizeHandle({
   onResize: (delta: number) => void
   direction?: 'right' | 'left'
 }) {
-  const [dragging, setDragging] = useState(false)
-  const startX = useRef(0)
+  const onResizeRef = useRef(onResize)
+  onResizeRef.current = onResize
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
-    startX.current = e.clientX
-    setDragging(true)
-  }, [])
+    e.stopPropagation()
+    const startX = e.clientX
+    let lastX = startX
 
-  useEffect(() => {
-    if (!dragging) return
-    const handleMouseMove = (e: MouseEvent) => {
-      const delta = e.clientX - startX.current
-      startX.current = e.clientX
-      onResize(direction === 'right' ? delta : -delta)
+    const handleMouseMove = (ev: MouseEvent) => {
+      const delta = ev.clientX - lastX
+      lastX = ev.clientX
+      if (delta !== 0) {
+        onResizeRef.current(direction === 'right' ? delta : -delta)
+      }
     }
-    const handleMouseUp = () => setDragging(false)
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
-    return () => {
+
+    const handleMouseUp = () => {
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
     }
-  }, [dragging, onResize, direction])
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+  }, [direction])
 
   return (
     <div
-      className={`resize-handle ${dragging ? 'active' : ''}`}
+      className="resize-handle"
       onMouseDown={handleMouseDown}
     />
   )
@@ -63,6 +64,7 @@ export default function WorkbenchMode() {
   const {
     refreshFiles,
     toggleSidebar,
+    toggleChatPanel,
     sidebarVisible,
     chatPanelVisible,
   } = useWorkspace()
@@ -135,7 +137,8 @@ export default function WorkbenchMode() {
 
   return (
     <div className="flex flex-col h-full">
-      <TopBar onToggleSidebar={toggleSidebar} />
+      {/* TopBar: right ⊟ button toggles ChatPanel */}
+      <TopBar onToggleSidebar={toggleChatPanel} />
 
       <div className="flex flex-1 overflow-hidden">
         <IconRail onIconClick={handleIconClick} />
