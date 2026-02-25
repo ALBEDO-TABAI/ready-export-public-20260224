@@ -18,11 +18,15 @@ import { setupCalendarIPC } from './modules/calendar-engine/ipc-handler'
 import { DatabaseManager } from './modules/database'
 
 // Environment configuration
-// In production, default to mock mode since real services are not fully ready yet.
-// In development, control via ENABLE_MOCK_SERVICES env variable.
+// Document operations (local fs) are always real — no external dependencies.
+// External services (RSS, Calendar, Agent) default to mock in production
+// since their backends are not fully ready yet.
 const ENABLE_MOCK_SERVICES = is.dev
   ? process.env.ENABLE_MOCK_SERVICES === 'true'
   : process.env.ENABLE_MOCK_SERVICES !== 'false' // default true in production
+
+// Document engine always uses real fs, regardless of mock setting
+const DOCUMENT_USE_MOCK = false
 
 // Initialize database
 const db = new DatabaseManager()
@@ -66,7 +70,7 @@ function createWindow(): void {
   // Setup IPC handlers
   setupAgentIPC(agentManager, mainWindow)
   setupBrowserIPC(mainWindow, ENABLE_MOCK_SERVICES)
-  setupDocumentIPC(ENABLE_MOCK_SERVICES)
+  setupDocumentIPC(DOCUMENT_USE_MOCK)  // Always real fs
   setupRSSIPC(ENABLE_MOCK_SERVICES)
   setupCalendarIPC(ENABLE_MOCK_SERVICES)
 
