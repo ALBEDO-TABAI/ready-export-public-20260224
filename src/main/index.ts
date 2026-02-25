@@ -5,7 +5,7 @@ import { resolve } from 'path'
 config({ path: resolve(__dirname, '../../.env') })
 
 import { app, shell, BrowserWindow, ipcMain, protocol, net } from 'electron'
-import { join } from 'path'
+import { join, extname } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 
 // Import modules
@@ -99,15 +99,35 @@ function createWindow(): void {
   })
 }
 
+// Register local-file as a privileged scheme BEFORE app.whenReady()
+// This is required for video streaming (range requests), fetch API support, etc.
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'local-file',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      stream: true,
+      bypassCSP: true,
+    }
+  }
+])
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.ready.app')
 
-  // Register local-file:// protocol for serving local files to the renderer
+  // Register local-file:// protocol handler for serving local files to the renderer
   protocol.handle('local-file', (request) => {
-    const filePath = decodeURIComponent(request.url.replace('local-file://', ''))
+    // Extract file path: local-file://path/to/file → /path/to/file
+    let filePath = decodeURIComponent(new URL(request.url).pathname)
+    // On Windows, remove leading slash from /C:/path
+    if (process.platform === 'win32' && filePath.startsWith('/')) {
+      filePath = filePath.slice(1)
+    }
     return net.fetch(`file://${filePath}`)
   })
 

@@ -329,7 +329,8 @@ export default function SidePanel() {
       js: 'document', css: 'document', html: 'document', docx: 'document', xlsx: 'document',
       png: 'document', jpg: 'document', jpeg: 'document', webp: 'document', svg: 'document', gif: 'document',
       bmp: 'document', ico: 'document',
-      mp4: 'document', mov: 'document', mkv: 'document', avi: 'document', webm: 'document', ogg: 'document'
+      mp4: 'document', mov: 'document', mkv: 'document', avi: 'document', webm: 'document', ogg: 'document',
+      pdf: 'document'
     }
     if (modeMap[ext]) {
       setWorkbenchMode(modeMap[ext])

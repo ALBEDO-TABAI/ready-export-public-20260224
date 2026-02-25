@@ -121,11 +121,14 @@ function DocumentEditor({ tab }: { tab: DocTab }) {
   const isMarkdown = ['md', 'txt', 'json', 'ts', 'tsx', 'js', 'css', 'html', ''].includes(currentExt)
   const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(currentExt)
   const isVideo = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'ogg'].includes(currentExt)
-  const isMedia = isImage || isVideo
+  const isDocx = currentExt === 'docx'
+  const isXlsx = ['xlsx', 'csv', 'xls'].includes(currentExt)
+  const isPdf = currentExt === 'pdf'
   const canSave = isMarkdown && !!tab.path
   const renderedHtml = useMemo(() => renderMarkdown(tab.content), [tab.content])
   const [imageZoom, setImageZoom] = useState(100)
-  const fileUrl = tab.path ? `local-file://${tab.path}` : ''
+  // Standard scheme needs triple slash for absolute paths
+  const fileUrl = tab.path ? `local-file:///${encodeURI(tab.path).replace(/#/g, '%23')}` : ''
 
   // Load file content on mount / path change
   useEffect(() => {
@@ -160,8 +163,8 @@ function DocumentEditor({ tab }: { tab: DocTab }) {
             updateTabContent(tab.id, formatXlsxPreview(result.data))
             setViewMode('preview')
           }
-        } else if (isImage || isVideo) {
-          // Image/video files don't need content loading, rendered directly via file:// URL
+        } else if (isImage || isVideo || isPdf) {
+          // Image/video/PDF files don't need content loading, rendered directly via local-file:// URL
           if (!cancelled) setIsLoading(false)
           return
         } else {
@@ -380,6 +383,88 @@ function DocumentEditor({ tab }: { tab: DocTab }) {
                 <span>{tab.title}</span>
               </div>
               <span className="uppercase">{currentExt}</span>
+            </div>
+          </div>
+        ) : isPdf && tab.path ? (
+          /* PDF embed */
+          <div className="flex-1 flex flex-col" style={{ background: '#525659' }}>
+            <embed
+              src={fileUrl}
+              type="application/pdf"
+              className="flex-1 w-full h-full"
+              style={{ border: 'none' }}
+            />
+            <div
+              className="flex items-center justify-between px-4 py-1.5 text-[11px]"
+              style={{ background: '#333', color: '#999' }}
+            >
+              <span>{tab.title}</span>
+              <span>PDF</span>
+            </div>
+          </div>
+        ) : isXlsx ? (
+          /* XLSX table rendering */
+          <div className="flex-1 overflow-auto">
+            <div style={{ padding: '24px 40px', maxWidth: 1200, margin: '0 auto' }}>
+              <div className="text-[14px] text-[var(--text-body)] space-y-4">
+                {tab.content ? (
+                  tab.content.split(/\n## Sheet: /).map((section, i) => {
+                    if (i === 0 && !section.trim()) return null
+                    const lines = section.split('\n')
+                    const sheetName = i === 0 ? '' : lines[0]
+                    const rows = lines.slice(i === 0 ? 0 : 1).filter(l => l.trim())
+                    return (
+                      <div key={i} className="border border-[var(--border-default)] rounded-lg overflow-hidden">
+                        {sheetName && (
+                          <div className="bg-[#F8F7F4] px-3 py-1.5 text-[12px] font-semibold text-[var(--text-title)] border-b border-[var(--border-default)]">
+                            📊 {sheetName}
+                          </div>
+                        )}
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-[12px]">
+                            <tbody>
+                              {rows.map((row, ri) => (
+                                <tr key={ri} className={ri === 0 ? 'bg-[#F8F7F4]' : 'hover:bg-black/[0.02]'}>
+                                  {row.split(' | ').map((cell, ci) => (
+                                    <td key={ci} className="border border-[var(--border-default)] px-2 py-1 whitespace-nowrap">
+                                      {cell}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div className="text-center text-[var(--text-muted)] py-10">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                    <p>正在加载表格...</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : isDocx ? (
+          /* DOCX preview */
+          <div className="flex-1 overflow-auto">
+            <div style={{ padding: '30px 50px', maxWidth: 800, margin: '0 auto' }}>
+              {tab.content ? (
+                <div
+                  className="prose prose-sm max-w-none text-[var(--text-body)]
+                    [&_h1]:text-[24px] [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:text-[var(--text-title)]
+                    [&_h2]:text-[20px] [&_h2]:font-semibold [&_h2]:mb-3 [&_h2]:text-[var(--text-title)]
+                    [&_p]:text-[15px] [&_p]:leading-relaxed [&_p]:mb-3"
+                  dangerouslySetInnerHTML={{ __html: tab.content }}
+                />
+              ) : (
+                <div className="text-center text-[var(--text-muted)] py-10">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                  <p>正在解析文档...</p>
+                </div>
+              )}
             </div>
           </div>
         ) : isMarkdown ? (
