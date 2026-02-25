@@ -266,7 +266,18 @@ export default function SidePanel({ width = 220 }: SidePanelProps) {
     >
       {/* Header */}
       <div className="h-[38px] flex items-center justify-between px-3 border-b border-[var(--border-default)]">
-        <span className="text-[13px] font-semibold text-[var(--text-title)]">文件管理</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[13px] font-semibold text-[var(--text-title)]">文件管理</span>
+          {!(typeof window !== 'undefined' && window.electronAPI) && (
+            <span
+              className="px-1.5 py-0.5 rounded text-[9px] font-medium"
+              style={{ background: 'var(--color-orange-light)', color: 'var(--color-orange)' }}
+              title="浏览器预览模式下显示模拟文件。在 Electron 环境中可浏览真实文件。"
+            >
+              预览
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-1">
           <button
             onClick={() => startCreating('file')}

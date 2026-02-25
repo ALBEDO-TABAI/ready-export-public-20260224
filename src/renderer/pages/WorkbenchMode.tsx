@@ -23,13 +23,32 @@ export default function WorkbenchMode() {
   useEffect(() => {
     const initWorkspace = async () => {
       try {
-        await refreshFiles()
+        // Restore saved workspace root from localStorage
+        const savedRoot = localStorage.getItem('ready-workspace-root')
+
+        if (typeof window !== 'undefined' && window.electronAPI) {
+          if (savedRoot) {
+            // Restore previously opened workspace
+            useWorkspace.getState().setWorkspaceRoot(savedRoot)
+          } else {
+            // First launch: use home directory
+            const homeResult = await window.electronAPI.document.getHome()
+            if (homeResult.success && homeResult.path) {
+              useWorkspace.getState().setWorkspaceRoot(homeResult.path)
+            }
+          }
+        } else {
+          // Browser preview mode: load mock files
+          await refreshFiles()
+        }
       } catch (error) {
         console.warn('Workspace init failed, fallback to mock files')
+        await refreshFiles()
       }
     }
     initWorkspace()
-  }, [refreshFiles])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleIconClick = (icon: string) => {
     if (icon === 'settings') {
