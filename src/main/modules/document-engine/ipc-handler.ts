@@ -1,6 +1,10 @@
-import { ipcMain } from 'electron'
-import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from 'fs'
-import { join } from 'path'
+import { ipcMain, dialog, shell, BrowserWindow } from 'electron'
+import {
+  readFileSync, writeFileSync, readdirSync, statSync, existsSync,
+  mkdirSync, renameSync, copyFileSync, unlinkSync, rmSync, cpSync
+} from 'fs'
+import { join, basename, dirname } from 'path'
+import { homedir } from 'os'
 
 // Lazy-loaded libraries
 let mammothLib: typeof import('mammoth') | null = null
@@ -198,6 +202,146 @@ export function setupDocumentIPC(useMock = false): void {
         originalError: errorMessage,
         file: path
       }
+    }
+  })
+
+  // --- File Management IPC Handlers ---
+
+  // Create directory
+  ipcMain.handle('document:mkdir', async (_, path: string) => {
+    try {
+      if (useMock) return { success: true, mock: true }
+      mkdirSync(path, { recursive: true })
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  })
+
+  // Rename file/directory
+  ipcMain.handle('document:rename', async (_, { oldPath, newPath }: { oldPath: string; newPath: string }) => {
+    try {
+      if (useMock) return { success: true, mock: true }
+      if (!existsSync(oldPath)) return { success: false, error: 'Source not found' }
+      if (existsSync(newPath)) return { success: false, error: 'Target already exists' }
+      renameSync(oldPath, newPath)
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  })
+
+  // Delete file/directory
+  ipcMain.handle('document:delete', async (_, path: string) => {
+    try {
+      if (useMock) return { success: true, mock: true }
+      if (!existsSync(path)) return { success: false, error: 'Not found' }
+      const stats = statSync(path)
+      if (stats.isDirectory()) {
+        rmSync(path, { recursive: true, force: true })
+      } else {
+        unlinkSync(path)
+      }
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  })
+
+  // Copy file/directory
+  ipcMain.handle('document:copy', async (_, { src, dest }: { src: string; dest: string }) => {
+    try {
+      if (useMock) return { success: true, mock: true }
+      if (!existsSync(src)) return { success: false, error: 'Source not found' }
+      const stats = statSync(src)
+      if (stats.isDirectory()) {
+        cpSync(src, dest, { recursive: true })
+      } else {
+        copyFileSync(src, dest)
+      }
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  })
+
+  // Move file/directory
+  ipcMain.handle('document:move', async (_, { src, dest }: { src: string; dest: string }) => {
+    try {
+      if (useMock) return { success: true, mock: true }
+      if (!existsSync(src)) return { success: false, error: 'Source not found' }
+      renameSync(src, dest)
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  })
+
+  // Get file stats
+  ipcMain.handle('document:stat', async (_, path: string) => {
+    try {
+      if (useMock) {
+        return { success: true, mock: true, stat: { size: 1024, isDirectory: false, modified: new Date() } }
+      }
+      if (!existsSync(path)) return { success: false, error: 'Not found' }
+      const stats = statSync(path)
+      return {
+        success: true,
+        stat: {
+          size: stats.size,
+          isDirectory: stats.isDirectory(),
+          modified: stats.mtime,
+          created: stats.birthtime
+        }
+      }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  })
+
+  // Open folder dialog — let user choose a workspace directory
+  ipcMain.handle('document:openFolder', async () => {
+    try {
+      const win = BrowserWindow.getFocusedWindow()
+      if (!win) return { success: false, error: 'No window' }
+      const result = await dialog.showOpenDialog(win, {
+        properties: ['openDirectory'],
+        title: '选择工作区目录'
+      })
+      if (result.canceled || result.filePaths.length === 0) {
+        return { success: false, error: 'cancelled' }
+      }
+      return { success: true, path: result.filePaths[0] }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  })
+
+  // Get home directory
+  ipcMain.handle('document:getHome', async () => {
+    return { success: true, path: homedir() }
+  })
+
+  // Reveal in system file manager
+  ipcMain.handle('document:showInFolder', async (_, path: string) => {
+    try {
+      if (!existsSync(path)) return { success: false, error: 'Not found' }
+      shell.showItemInFolder(path)
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  })
+
+  // Create a new empty file
+  ipcMain.handle('document:createFile', async (_, path: string) => {
+    try {
+      if (useMock) return { success: true, mock: true }
+      if (existsSync(path)) return { success: false, error: 'File already exists' }
+      writeFileSync(path, '', 'utf-8')
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
     }
   })
 }

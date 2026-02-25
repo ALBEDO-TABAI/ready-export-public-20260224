@@ -41,7 +41,18 @@ const documentAPI = {
   writeFile: (path: string, content: string) => ipcRenderer.invoke('document:write', { path, content }),
   listFiles: (dir: string) => ipcRenderer.invoke('document:list', dir),
   parseDocx: (path: string) => ipcRenderer.invoke('document:parseDocx', path),
-  parseXlsx: (path: string) => ipcRenderer.invoke('document:parseXlsx', path)
+  parseXlsx: (path: string) => ipcRenderer.invoke('document:parseXlsx', path),
+  // File management
+  mkdir: (path: string) => ipcRenderer.invoke('document:mkdir', path),
+  rename: (oldPath: string, newPath: string) => ipcRenderer.invoke('document:rename', { oldPath, newPath }),
+  deleteItem: (path: string) => ipcRenderer.invoke('document:delete', path),
+  copyItem: (src: string, dest: string) => ipcRenderer.invoke('document:copy', { src, dest }),
+  moveItem: (src: string, dest: string) => ipcRenderer.invoke('document:move', { src, dest }),
+  stat: (path: string) => ipcRenderer.invoke('document:stat', path),
+  openFolder: () => ipcRenderer.invoke('document:openFolder'),
+  getHome: () => ipcRenderer.invoke('document:getHome'),
+  showInFolder: (path: string) => ipcRenderer.invoke('document:showInFolder', path),
+  createFile: (path: string) => ipcRenderer.invoke('document:createFile', path)
 }
 
 // RSS API

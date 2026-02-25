@@ -26,6 +26,17 @@ interface ElectronDocumentAPI {
   listFiles: (dir: string) => Promise<any>
   parseDocx: (path: string) => Promise<any>
   parseXlsx: (path: string) => Promise<any>
+  // File management
+  mkdir: (path: string) => Promise<any>
+  rename: (oldPath: string, newPath: string) => Promise<any>
+  deleteItem: (path: string) => Promise<any>
+  copyItem: (src: string, dest: string) => Promise<any>
+  moveItem: (src: string, dest: string) => Promise<any>
+  stat: (path: string) => Promise<any>
+  openFolder: () => Promise<any>
+  getHome: () => Promise<any>
+  showInFolder: (path: string) => Promise<any>
+  createFile: (path: string) => Promise<any>
 }
 
 interface ElectronRSSAPI {
