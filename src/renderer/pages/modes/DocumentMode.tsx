@@ -127,8 +127,8 @@ function DocumentEditor({ tab }: { tab: DocTab }) {
   const canSave = isMarkdown && !!tab.path
   const renderedHtml = useMemo(() => renderMarkdown(tab.content), [tab.content])
   const [imageZoom, setImageZoom] = useState(100)
-  // Standard scheme needs triple slash for absolute paths
-  const fileUrl = tab.path ? `local-file:///${encodeURI(tab.path).replace(/#/g, '%23')}` : ''
+  // Standard scheme URL: local-file:// + path (path already starts with /)
+  const fileUrl = tab.path ? `local-file://${encodeURI(tab.path).replace(/#/g, '%23')}` : ''
 
   // Load file content on mount / path change
   useEffect(() => {
@@ -160,7 +160,8 @@ function DocumentEditor({ tab }: { tab: DocTab }) {
           const result = (await window.electronAPI.document.parseXlsx(tab.path)) as ReadResult
           if (!result.success) throw new Error(result.error || 'XLSX 解析失败')
           if (!cancelled) {
-            updateTabContent(tab.id, formatXlsxPreview(result.data))
+            // Store raw data as JSON for proper rendering
+            updateTabContent(tab.id, JSON.stringify(result.data || {}))
             setViewMode('preview')
           }
         } else if (isImage || isVideo || isPdf) {
@@ -403,31 +404,26 @@ function DocumentEditor({ tab }: { tab: DocTab }) {
             </div>
           </div>
         ) : isXlsx ? (
-          /* XLSX table rendering */
+          /* XLSX table rendering from JSON data */
           <div className="flex-1 overflow-auto">
             <div style={{ padding: '24px 40px', maxWidth: 1200, margin: '0 auto' }}>
               <div className="text-[14px] text-[var(--text-body)] space-y-4">
-                {tab.content ? (
-                  tab.content.split(/\n## Sheet: /).map((section, i) => {
-                    if (i === 0 && !section.trim()) return null
-                    const lines = section.split('\n')
-                    const sheetName = i === 0 ? '' : lines[0]
-                    const rows = lines.slice(i === 0 ? 0 : 1).filter(l => l.trim())
-                    return (
-                      <div key={i} className="border border-[var(--border-default)] rounded-lg overflow-hidden">
-                        {sheetName && (
-                          <div className="bg-[#F8F7F4] px-3 py-1.5 text-[12px] font-semibold text-[var(--text-title)] border-b border-[var(--border-default)]">
-                            📊 {sheetName}
-                          </div>
-                        )}
+                {tab.content ? (() => {
+                  try {
+                    const sheets = JSON.parse(tab.content) as Record<string, unknown[][]>
+                    return Object.entries(sheets).map(([sheetName, rows]) => (
+                      <div key={sheetName} className="border border-[var(--border-default)] rounded-lg overflow-hidden">
+                        <div className="bg-[#F8F7F4] px-3 py-1.5 text-[12px] font-semibold text-[var(--text-title)] border-b border-[var(--border-default)]">
+                          📊 {sheetName}
+                        </div>
                         <div className="overflow-x-auto">
                           <table className="w-full text-[12px]">
                             <tbody>
-                              {rows.map((row, ri) => (
-                                <tr key={ri} className={ri === 0 ? 'bg-[#F8F7F4]' : 'hover:bg-black/[0.02]'}>
-                                  {row.split(' | ').map((cell, ci) => (
+                              {(rows as unknown[][]).map((row, ri) => (
+                                <tr key={ri} className={ri === 0 ? 'bg-[#F8F7F4] font-semibold' : 'hover:bg-black/[0.02]'}>
+                                  {(row as unknown[]).map((cell, ci) => (
                                     <td key={ci} className="border border-[var(--border-default)] px-2 py-1 whitespace-nowrap">
-                                      {cell}
+                                      {String(cell ?? '')}
                                     </td>
                                   ))}
                                 </tr>
@@ -436,9 +432,11 @@ function DocumentEditor({ tab }: { tab: DocTab }) {
                           </table>
                         </div>
                       </div>
-                    )
-                  })
-                ) : (
+                    ))
+                  } catch {
+                    return <div className="text-[var(--text-muted)] text-center py-10">表格数据解析失败</div>
+                  }
+                })() : (
                   <div className="text-center text-[var(--text-muted)] py-10">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
                     <p>正在加载表格...</p>
