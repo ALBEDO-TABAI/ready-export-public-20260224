@@ -146,16 +146,13 @@ function FileTreeItem({
 }
 
 // --- Main SidePanel ---
-interface SidePanelProps {
-  width?: number
-}
-
-export default function SidePanel({ width = 220 }: SidePanelProps) {
+export default function SidePanel() {
   const [query, setQuery] = useState('')
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: FileItem | null } | null>(null)
   const {
     files,
     sidebarVisible,
+    sidebarWidth,
     currentPath,
     workspaceRoot,
     selectedFile,
@@ -257,8 +254,8 @@ export default function SidePanel({ width = 220 }: SidePanelProps) {
     <div
       className="flex-shrink-0 border-r border-[var(--border-default)] flex flex-col select-none overflow-hidden"
       style={{
-        width: sidebarVisible ? width : 0,
-        minWidth: sidebarVisible ? width : 0,
+        width: sidebarVisible ? sidebarWidth : 0,
+        minWidth: sidebarVisible ? sidebarWidth : 0,
         background: 'var(--bg-panel)',
         transition: 'width 0.2s ease, min-width 0.2s ease',
         borderRightWidth: sidebarVisible ? 1 : 0,
