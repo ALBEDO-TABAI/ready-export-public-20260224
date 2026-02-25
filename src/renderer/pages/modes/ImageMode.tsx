@@ -3,8 +3,10 @@ import {
   MousePointer, Move, Grid3X3, Square, Type, Brush,
   Sparkles, Layers, Eye, EyeOff, Lock, Unlock,
   Copy, Trash2, Download, ChevronDown, ChevronRight,
-  Plus, Minus, GripVertical, Type as TypeIcon, Image as ImageIcon
+  Plus, Minus, GripVertical, Type as TypeIcon, Image as ImageIcon,
+  Upload
 } from 'lucide-react'
+import { useWorkspace } from '../../stores/useWorkspace'
 
 // --- Types ---
 
@@ -88,16 +90,77 @@ const initialObjects: CanvasObject[] = [
 // --- Component ---
 
 export default function ImageMode() {
+  const { selectedFile } = useWorkspace()
   const [activeTool, setActiveTool] = useState<ActiveTool>('select')
   const [objects, setObjects] = useState<CanvasObject[]>(initialObjects)
   const [selectedId, setSelectedId] = useState<string | null>('title-text')
   const [zoom, setZoom] = useState(1)
   const [layersExpanded, setLayersExpanded] = useState(true)
-  
+  const [loadedImageUrl, setLoadedImageUrl] = useState<string | null>(null)
+
+  // Load real image when selectedFile is an image
+  useEffect(() => {
+    const imageExts = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'bmp']
+    if (!selectedFile) {
+      setLoadedImageUrl(null)
+      return
+    }
+    const ext = selectedFile.split('.').pop()?.toLowerCase() || ''
+    if (!imageExts.includes(ext)) {
+      setLoadedImageUrl(null)
+      return
+    }
+
+    // Use file:// protocol for Electron, or try to read as base64
+    if (typeof window !== 'undefined' && window.electronAPI) {
+      // In Electron, file:// works directly
+      setLoadedImageUrl(`file://${selectedFile}`)
+    } else {
+      // In browser preview, show placeholder
+      setLoadedImageUrl(null)
+    }
+
+    // Create image object on the canvas
+    const img = new Image()
+    img.onload = () => {
+      const maxW = 800
+      const maxH = 600
+      const scale = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1)
+      const w = Math.round(img.naturalWidth * scale)
+      const h = Math.round(img.naturalHeight * scale)
+
+      setObjects(prev => {
+        // Remove any existing loaded-image layer
+        const filtered = prev.filter(o => o.id !== 'loaded-image')
+        // Insert after background
+        const bgIdx = filtered.findIndex(o => o.id === 'bg')
+        const newObj: CanvasObject = {
+          id: 'loaded-image',
+          type: 'image',
+          name: selectedFile.split('/').pop() || '图片',
+          x: Math.round((maxW - w) / 2),
+          y: Math.round((maxH - h) / 2),
+          width: w,
+          height: h,
+          visible: true,
+          locked: false,
+          selected: true
+        }
+        const result = [...filtered]
+        result.splice(bgIdx + 1, 0, newObj)
+        return result
+      })
+      setSelectedId('loaded-image')
+    }
+    if (typeof window !== 'undefined' && window.electronAPI) {
+      img.src = `file://${selectedFile}`
+    }
+  }, [selectedFile])
+
   // Drag and drop state
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dragOverId, setDragOverId] = useState<string | null>(null)
-  
+
   // Context menu state
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     visible: false,
@@ -105,7 +168,7 @@ export default function ImageMode() {
     y: 0,
     layerId: null
   })
-  
+
   const contextMenuRef = useRef<HTMLDivElement>(null)
 
   const selectedObject = objects.find(o => o.id === selectedId) || null
@@ -170,10 +233,10 @@ export default function ImageMode() {
   const mergeLayer = useCallback((id: string) => {
     const currentIndex = objects.findIndex(o => o.id === id)
     if (currentIndex <= 0) return // Can't merge if it's the bottom layer or not found
-    
+
     const currentObj = objects[currentIndex]
     const targetObj = objects[currentIndex - 1]
-    
+
     // Simple merge: delete the current layer and apply some properties to target
     // In a real app, this would involve canvas drawing operations
     setObjects(prev => {
@@ -182,7 +245,7 @@ export default function ImageMode() {
       newObjects.splice(currentIndex, 1)
       return newObjects
     })
-    
+
     if (selectedId === id) {
       setSelectedId(targetObj.id)
     }
@@ -213,7 +276,7 @@ export default function ImageMode() {
   const handleDrop = useCallback((e: React.DragEvent, targetId: string) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     if (!draggedId || draggedId === targetId) {
       setDraggedId(null)
       setDragOverId(null)
@@ -223,16 +286,16 @@ export default function ImageMode() {
     setObjects(prev => {
       const draggedIndex = prev.findIndex(o => o.id === draggedId)
       const targetIndex = prev.findIndex(o => o.id === targetId)
-      
+
       if (draggedIndex === -1 || targetIndex === -1) return prev
-      
+
       const newObjects = [...prev]
       const [removed] = newObjects.splice(draggedIndex, 1)
       newObjects.splice(targetIndex, 0, removed)
-      
+
       return newObjects
     })
-    
+
     setDraggedId(null)
     setDragOverId(null)
   }, [draggedId])
@@ -252,7 +315,7 @@ export default function ImageMode() {
 
   const handleContextMenuAction = useCallback((action: 'duplicate' | 'delete' | 'merge') => {
     if (!contextMenu.layerId) return
-    
+
     switch (action) {
       case 'duplicate':
         duplicateObject(contextMenu.layerId)
@@ -264,7 +327,7 @@ export default function ImageMode() {
         mergeLayer(contextMenu.layerId)
         break
     }
-    
+
     setContextMenu(prev => ({ ...prev, visible: false }))
   }, [contextMenu.layerId, duplicateObject, deleteObject, mergeLayer])
 
@@ -371,6 +434,22 @@ export default function ImageMode() {
                     <span style={{ color: obj.fill, fontWeight: obj.fontSize && obj.fontSize > 24 ? 700 : 400 }}>
                       {obj.text}
                     </span>
+                  )}
+                  {obj.type === 'image' && obj.id === 'loaded-image' && loadedImageUrl && (
+                    <img
+                      src={loadedImageUrl}
+                      alt={obj.name}
+                      className="w-full h-full object-contain pointer-events-none"
+                      draggable={false}
+                    />
+                  )}
+                  {obj.type === 'image' && obj.id === 'loaded-image' && !loadedImageUrl && (
+                    <div className="w-full h-full flex items-center justify-center bg-[var(--bg-canvas)] text-[var(--text-light)]">
+                      <div className="text-center">
+                        <Upload className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-[11px]">浏览器预览模式</p>
+                      </div>
+                    </div>
                   )}
                 </div>
               ))}
@@ -542,7 +621,7 @@ export default function ImageMode() {
                 {[...objects].reverse().map((obj, reversedIndex) => {
                   const originalIndex = objects.length - 1 - reversedIndex
                   const isDragOver = dragOverId === obj.id && draggedId !== obj.id
-                  
+
                   return (
                     <div
                       key={obj.id}
@@ -566,7 +645,7 @@ export default function ImageMode() {
                     >
                       {/* Drag Handle */}
                       <GripVertical className="w-3 h-3 opacity-30 cursor-grab active:cursor-grabbing" />
-                      
+
                       {/* Thumbnail */}
                       <LayerThumbnail obj={obj} />
 
@@ -702,7 +781,7 @@ function LayerThumbnail({ obj }: { obj: CanvasObject }) {
         return (
           <div
             className="w-full h-full rounded-sm"
-            style={{ 
+            style={{
               backgroundColor: obj.fill || '#ccc',
               opacity: obj.visible ? (obj.fillOpacity ?? 1) : 0.3
             }}
@@ -710,22 +789,22 @@ function LayerThumbnail({ obj }: { obj: CanvasObject }) {
         )
       case 'text':
         return (
-          <div 
+          <div
             className="w-full h-full flex items-center justify-center rounded-sm"
-            style={{ 
+            style={{
               backgroundColor: obj.fill ? `${obj.fill}20` : '#f0f0f0',
               opacity: obj.visible ? 1 : 0.3
             }}
           >
-            <TypeIcon 
-              className="w-3 h-3" 
+            <TypeIcon
+              className="w-3 h-3"
               style={{ color: obj.fill || '#333' }}
             />
           </div>
         )
       case 'image':
         return (
-          <div 
+          <div
             className="w-full h-full flex items-center justify-center rounded-sm bg-gray-100"
             style={{ opacity: obj.visible ? 1 : 0.3 }}
           >
@@ -740,7 +819,7 @@ function LayerThumbnail({ obj }: { obj: CanvasObject }) {
   }
 
   return (
-    <div 
+    <div
       className="w-6 h-6 rounded border border-[var(--border-default)] overflow-hidden flex-shrink-0"
       title={`${obj.type === 'rect' ? '矩形' : obj.type === 'text' ? '文本' : '图片'}图层`}
     >
