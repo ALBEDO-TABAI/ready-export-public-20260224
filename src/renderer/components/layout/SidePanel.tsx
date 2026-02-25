@@ -249,6 +249,7 @@ function FileTreeRecursive({
 export default function SidePanel() {
   const [query, setQuery] = useState('')
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: FileItem | null } | null>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
   const {
     files,
     sidebarVisible,
@@ -351,6 +352,50 @@ export default function SidePanel() {
     // In browser preview, just show mock files
   }
 
+  // --- Drag & Drop from Finder ---
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.dataTransfer.types.includes('Files')) {
+      e.dataTransfer.dropEffect = 'copy'
+      setIsDragOver(true)
+    }
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+  }, [])
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+
+    const targetDir = currentPath || workspaceRoot
+    if (!targetDir) return
+
+    const files = e.dataTransfer.files
+    if (!files || files.length === 0) return
+
+    if (typeof window !== 'undefined' && window.electronAPI) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        const srcPath = (file as File & { path?: string }).path
+        if (!srcPath) continue
+        const fileName = srcPath.split('/').pop() || file.name
+        const destPath = `${targetDir}/${fileName}`
+        try {
+          await window.electronAPI.document.copyItem(srcPath, destPath)
+        } catch (err) {
+          console.warn('Failed to copy:', srcPath, err)
+        }
+      }
+      await refreshFiles()
+    }
+  }, [currentPath, workspaceRoot, refreshFiles])
+
   const displayPath = currentPath === workspaceRoot
     ? currentPath.split('/').pop() || currentPath
     : currentPath.replace(workspaceRoot || '', '').replace(/^\//, '') || '/'
@@ -365,6 +410,9 @@ export default function SidePanel() {
         transition: 'width 0.2s ease, min-width 0.2s ease',
         borderRightWidth: sidebarVisible ? 1 : 0,
       }}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
       onContextMenu={(e) => {
         e.preventDefault()
         setContextMenu({ x: e.clientX, y: e.clientY, item: null })
@@ -460,7 +508,16 @@ export default function SidePanel() {
       </div>
 
       {/* File List */}
-      <div className="flex-1 overflow-auto px-1 pb-2 pt-2">
+      <div className="flex-1 overflow-auto px-1 pb-2 pt-2 relative">
+        {/* Drag overlay */}
+        {isDragOver && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--color-blue-light)] border-2 border-dashed border-[var(--color-blue)] rounded-lg m-1 pointer-events-none">
+            <div className="flex flex-col items-center gap-1">
+              <FolderOpenIcon className="w-6 h-6 text-[var(--color-blue)]" />
+              <span className="text-[12px] font-medium text-[var(--color-blue)]">拖放文件到这里</span>
+            </div>
+          </div>
+        )}
         {/* Inline create input */}
         {creatingType && (
           <div className="px-2 py-1">
