@@ -317,3 +317,8 @@ body {
   left: -3px;
   right: -3px;
 }
+
+/* Disable all transitions during panel resize drag */
+body.resizing * {
+  transition: none !important;
+}

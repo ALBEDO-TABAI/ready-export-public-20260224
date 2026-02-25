@@ -12,10 +12,20 @@ const topIcons = [
 ]
 
 export default function IconRail({ activeIcon = 'folder', onIconClick }: IconRailProps) {
+  const handleClick = (id: string) => {
+    if (id === 'search') {
+      alert('全局搜索功能即将推出 🔍')
+    } else if (id === 'extensions') {
+      alert('插件市场即将推出 🧩')
+    } else {
+      onIconClick?.(id)
+    }
+  }
+
   return (
-    <div 
+    <div
       className="w-11 flex flex-col justify-between py-2.5 border-r border-[var(--border-default)]"
-      style={{ 
+      style={{
         background: 'var(--bg-panel)',
         boxShadow: '2px 0 8px rgba(0,0,0,0.04)'
       }}
@@ -25,13 +35,13 @@ export default function IconRail({ activeIcon = 'folder', onIconClick }: IconRai
         {topIcons.map(({ id, icon: Icon, label }) => (
           <button
             key={id}
-            onClick={() => onIconClick?.(id)}
+            onClick={() => handleClick(id)}
             title={label}
             className={`
               w-[34px] h-[34px] rounded-[10px] flex items-center justify-center
               transition-all duration-200
-              ${activeIcon === id 
-                ? 'bg-[var(--color-blue-light)] text-[var(--color-blue)]' 
+              ${activeIcon === id
+                ? 'bg-[var(--color-blue-light)] text-[var(--color-blue)]'
                 : 'text-[#6A6A6A] hover:bg-black/5'
               }
             `}

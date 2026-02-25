@@ -74,11 +74,17 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
 
       {/* Right: Search + User + Toggle */}
       <div className="flex items-center gap-[10px] no-drag">
-        <button className="p-1.5 rounded-lg hover:bg-black/5 transition-colors">
+        <button
+          title="全局搜索 (⌘K)"
+          onClick={() => alert('全局搜索功能即将推出 🔍')}
+          className="p-1.5 rounded-lg hover:bg-black/5 transition-colors"
+        >
           <Search style={{ width: 15, height: 15 }} className="text-[#6A6A6A]" strokeWidth={2} />
         </button>
 
-        <div
+        <button
+          title="用户设置"
+          onClick={() => alert('用户菜单即将推出 👤')}
           className="flex items-center justify-center"
           style={{
             width: 24, height: 24,
@@ -87,10 +93,11 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
           }}
         >
           <span style={{ fontSize: 11, fontWeight: 600, color: '#5B8DEF' }}>U</span>
-        </div>
+        </button>
 
         <button
           onClick={onToggleSidebar}
+          title="收起/展开聊天面板"
           className="p-1.5 rounded-lg hover:bg-black/5 transition-colors"
         >
           <PanelLeftClose style={{ width: 15, height: 15 }} className="text-[#6A6A6A]" strokeWidth={2} />

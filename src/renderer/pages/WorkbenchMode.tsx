@@ -42,12 +42,14 @@ function ResizeHandle({
     const handleMouseUp = () => {
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
+      document.body.classList.remove('resizing')
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
     }
 
     document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseup', handleMouseUp)
+    document.body.classList.add('resizing')
     document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
   }, [direction])
