@@ -16,7 +16,19 @@ interface TopBarProps {
 }
 
 export default function TopBar({ onToggleSidebar }: TopBarProps) {
-  const { appMode, workbenchMode, setWorkbenchMode } = useMode()
+  const { appMode, workbenchMode, splitMode, setWorkbenchMode, setSplitMode } = useMode()
+
+  const handleModeClick = (mode: WorkbenchMode, e: React.MouseEvent) => {
+    if (e.shiftKey) {
+      // Shift+click: add as split mode (if different from current primary)
+      if (mode !== workbenchMode) {
+        setSplitMode(mode)
+      }
+    } else {
+      // Normal click: set as primary, clear split
+      setWorkbenchMode(mode)
+    }
+  }
 
   return (
     <div
@@ -37,19 +49,28 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
           <div className="flex items-center gap-0">
             {modes.map((mode) => {
               const Icon = mode.icon
-              const isActive = workbenchMode === mode.id
+              const isPrimary = workbenchMode === mode.id
+              const isSplit = splitMode === mode.id
+              const isActive = isPrimary || isSplit
               return (
                 <button
                   key={mode.id}
-                  onClick={() => setWorkbenchMode(mode.id)}
+                  onClick={(e) => handleModeClick(mode.id, e)}
                   className="flex items-center gap-[6px] rounded-[10px] transition-all duration-200 ease-out"
                   style={{
                     padding: '5px 10px',
                     height: 26,
                     opacity: 0.93,
-                    background: isActive ? 'rgba(91,141,239,0.09)' : 'transparent',
+                    background: isPrimary
+                      ? 'rgba(91,141,239,0.09)'
+                      : isSplit
+                        ? 'rgba(91,141,239,0.05)'
+                        : 'transparent',
                     color: isActive ? '#5B8DEF' : '#8A8A8A',
+                    // Visual indicator for split mode: underline dot
+                    ...(isSplit ? { borderBottom: '2px solid #5B8DEF' } : {}),
                   }}
+                  title={`${mode.label}${isSplit ? ' (分屏)' : ''}${!isActive ? '\n按住 Shift 点击可分屏' : ''}`}
                 >
                   <Icon
                     className="flex-shrink-0"
@@ -59,7 +80,7 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
                   <span
                     style={{
                       fontSize: 11,
-                      fontWeight: isActive ? 500 : 500,
+                      fontWeight: isActive ? 600 : 500,
                       lineHeight: '16px',
                     }}
                   >

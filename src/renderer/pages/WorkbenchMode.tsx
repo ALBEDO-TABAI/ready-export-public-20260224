@@ -70,7 +70,7 @@ export default function WorkbenchMode() {
     sidebarVisible,
     chatPanelVisible,
   } = useWorkspace()
-  const { workbenchMode } = useMode()
+  const { workbenchMode, splitMode } = useMode()
   const navigate = useNavigate()
 
   // Initialize workspace on mount
@@ -120,8 +120,8 @@ export default function WorkbenchMode() {
     }))
   }, [])
 
-  const renderMode = () => {
-    switch (workbenchMode) {
+  const renderModeComponent = (mode: string) => {
+    switch (mode) {
       case 'browser':
         return <BrowserMode />
       case 'document':
@@ -154,9 +154,29 @@ export default function WorkbenchMode() {
         )}
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-content)]">
-          {renderMode()}
-        </div>
+        {splitMode ? (
+          /* Split view: primary left, secondary right */
+          <div className="flex-1 flex min-w-0">
+            <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-content)]">
+              {renderModeComponent(workbenchMode)}
+            </div>
+            <div
+              style={{
+                width: 1,
+                background: 'var(--border-default)',
+                flexShrink: 0,
+              }}
+            />
+            <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-content)]">
+              {renderModeComponent(splitMode)}
+            </div>
+          </div>
+        ) : (
+          /* Single mode */
+          <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-content)]">
+            {renderModeComponent(workbenchMode)}
+          </div>
+        )}
 
         {/* Chat panel resize handle */}
         {chatPanelVisible && (
