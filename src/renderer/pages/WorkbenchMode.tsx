@@ -72,6 +72,16 @@ export default function WorkbenchMode() {
   } = useWorkspace()
   const { workbenchMode, splitMode } = useMode()
   const navigate = useNavigate()
+  const [splitRatio, setSplitRatio] = useState(50)
+  const splitContainerRef = useRef<HTMLDivElement>(null)
+
+  const handleSplitResize = useCallback((delta: number) => {
+    if (!splitContainerRef.current) return
+    const containerWidth = splitContainerRef.current.offsetWidth
+    if (containerWidth <= 0) return
+    const deltaPercent = (delta / containerWidth) * 100
+    setSplitRatio(prev => Math.max(20, Math.min(80, prev + deltaPercent)))
+  }, [])
 
   // Initialize workspace on mount
   useEffect(() => {
@@ -155,18 +165,15 @@ export default function WorkbenchMode() {
 
         {/* Main Content Area */}
         {splitMode ? (
-          /* Split view: primary left, secondary right */
-          <div className="flex-1 flex min-w-0">
-            <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-content)]">
+          /* Split view: primary left, secondary right, draggable divider */
+          <div className="flex-1 flex min-w-0" ref={splitContainerRef}>
+            <div
+              className="flex flex-col min-w-0 bg-[var(--bg-content)]"
+              style={{ flexBasis: `${splitRatio}%`, flexShrink: 0, flexGrow: 0 }}
+            >
               {renderModeComponent(workbenchMode)}
             </div>
-            <div
-              style={{
-                width: 1,
-                background: 'var(--border-default)',
-                flexShrink: 0,
-              }}
-            />
+            <ResizeHandle onResize={handleSplitResize} direction="right" />
             <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-content)]">
               {renderModeComponent(splitMode)}
             </div>
