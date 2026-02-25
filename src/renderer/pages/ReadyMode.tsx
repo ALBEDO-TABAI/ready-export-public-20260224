@@ -1,5 +1,8 @@
 import { useState } from 'react'
-import { Users, Settings, Plus, Send } from 'lucide-react'
+import {
+  Users, Settings, Plus, Send, Globe, FileText, Image,
+  Scissors, Rss, Calendar, Search, ChevronDown, Folder
+} from 'lucide-react'
 import { useMode } from '../stores/useMode'
 import { useAgent } from '../stores/useAgent'
 import ModeSlider from '../components/layout/ModeSlider'
@@ -7,7 +10,6 @@ import BrowserMode from './modes/BrowserMode'
 import DocumentMode from './modes/DocumentMode'
 import ImageMode from './modes/ImageMode'
 import VideoMode from './modes/VideoMode'
-
 import RSSMode from './modes/RSSMode'
 import CalendarMode from './modes/CalendarMode'
 
@@ -16,6 +18,15 @@ interface Task {
   title: string
   status: 'pending' | 'running' | 'completed'
 }
+
+const subModes: { id: string; label: string; icon: React.ElementType }[] = [
+  { id: 'browser', label: '浏览器', icon: Globe },
+  { id: 'document', label: '文档', icon: FileText },
+  { id: 'image', label: '图像', icon: Image },
+  { id: 'video', label: '剪辑', icon: Scissors },
+  { id: 'rss', label: 'RSS', icon: Rss },
+  { id: 'calendar', label: '日程', icon: Calendar }
+]
 
 export default function ReadyMode() {
   const { readySubMode, setReadySubMode } = useMode()
@@ -26,31 +37,15 @@ export default function ReadyMode() {
     { id: '3', title: '剪辑视频片段', status: 'pending' }
   ])
 
-  const subModes = [
-    { id: 'browser', label: '浏览器', icon: '🌐' },
-    { id: 'document', label: '文档', icon: '📄' },
-    { id: 'image', label: '图像', icon: '🖼️' },
-    { id: 'video', label: '剪辑', icon: '✂️' },
-    { id: 'rss', label: 'RSS', icon: '📰' },
-    { id: 'calendar', label: '日程', icon: '📅' }
-  ]
-
   const renderSubMode = () => {
     switch (readySubMode) {
-      case 'browser':
-        return <BrowserMode />
-      case 'document':
-        return <DocumentMode />
-      case 'image':
-        return <ImageMode />
-      case 'video':
-        return <VideoMode />
-      case 'rss':
-        return <RSSMode />
-      case 'calendar':
-        return <CalendarMode />
-      default:
-        return <BrowserMode />
+      case 'browser': return <BrowserMode />
+      case 'document': return <DocumentMode />
+      case 'image': return <ImageMode />
+      case 'video': return <VideoMode />
+      case 'rss': return <RSSMode />
+      case 'calendar': return <CalendarMode />
+      default: return <BrowserMode />
     }
   }
 
@@ -62,223 +57,321 @@ export default function ReadyMode() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Top Bar */}
+      {/* UnifiedTopBar — matches design HXeCj */}
       <div
-        className="h-[40px] flex items-center justify-between px-4 border-b border-[var(--border-default)]"
-        style={{ background: 'var(--bg-panel)' }}
+        className="flex items-center justify-between"
+        style={{
+          height: 40,
+          padding: '0 16px 0 72px',
+          background: 'var(--bg-panel)',
+          borderBottom: '1px solid var(--border-default)',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.04)'
+        }}
       >
-        <div className="flex items-center gap-4">
+        {/* Left: ModeSlider */}
+        <div className="flex items-center" style={{ gap: 12 }}>
           <ModeSlider />
+        </div>
 
-          {/* Sub Mode Tabs */}
-          <div className="flex items-center gap-1">
-            <button className="px-2.5 py-1 rounded-lg bg-[var(--color-green-light)] text-[var(--color-green)] text-[12px]">
-              实时跟随
-            </button>
-            {subModes.map((mode) => (
+        {/* Center: Sub mode tabs */}
+        <div className="flex items-center" style={{ gap: 8 }}>
+          <button
+            className="flex items-center"
+            style={{
+              padding: '4px 10px',
+              borderRadius: 10,
+              background: 'rgba(52,211,153,0.09)',
+              fontSize: 11, fontWeight: 500, color: 'var(--color-green)'
+            }}
+          >
+            实时跟随
+          </button>
+          {subModes.map((mode) => {
+            const Icon = mode.icon
+            const isActive = readySubMode === mode.id
+            return (
               <button
                 key={mode.id}
                 onClick={() => setReadySubMode(mode.id as typeof readySubMode)}
-                className={`
-                  flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] transition-all
-                  ${readySubMode === mode.id
-                    ? 'bg-[var(--color-blue-light)] text-[var(--color-blue)]'
-                    : 'hover:bg-black/5 text-[var(--text-muted)]'
-                  }
-                `}
+                className="flex items-center transition-all duration-200"
+                style={{
+                  padding: '4px 8px',
+                  borderRadius: 10,
+                  gap: 4,
+                  background: isActive ? 'rgba(91,141,239,0.09)' : 'transparent',
+                  color: isActive ? '#5B8DEF' : '#8A8A8A',
+                  fontSize: 11, fontWeight: 500
+                }}
               >
-                <span>{mode.icon}</span>
+                <Icon style={{ width: 12, height: 12 }} strokeWidth={2} />
                 <span>{mode.label}</span>
               </button>
-            ))}
-          </div>
+            )
+          })}
         </div>
 
-        <div className="flex items-center gap-2">
-          <button className="p-1.5 rounded hover:bg-black/5 transition-colors">
-            <Users className="w-4 h-4 text-[var(--text-muted)]" strokeWidth={2} />
+        {/* Right: users + settings */}
+        <div className="flex items-center" style={{ gap: 8 }}>
+          <button className="p-1 rounded hover:bg-black/5 transition-colors">
+            <Users style={{ width: 15, height: 15 }} className="text-[#999999]" strokeWidth={2} />
           </button>
-          <button className="p-1.5 rounded hover:bg-black/5 transition-colors">
-            <Settings className="w-4 h-4 text-[var(--text-muted)]" strokeWidth={2} />
+          <button className="p-1 rounded hover:bg-black/5 transition-colors">
+            <Settings style={{ width: 15, height: 15 }} className="text-[#999999]" strokeWidth={2} />
           </button>
         </div>
       </div>
 
-      {/* Four Panel Layout */}
+      {/* ContentBody — matches design Z58Gf */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Task Panel */}
+        {/* TaskPanel — matches design vkdOx */}
         <div
-          className="w-[200px] flex-shrink-0 border-r border-[var(--border-default)] flex flex-col"
-          style={{ background: 'var(--bg-panel)' }}
+          className="flex-shrink-0 flex flex-col"
+          style={{
+            width: 200,
+            background: 'var(--bg-panel)',
+            borderRight: '1px solid var(--border-default)'
+          }}
         >
-          {/* New Task Button */}
-          <div className="p-3 border-b border-[var(--border-default)]">
-            <button className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[var(--color-blue)] text-white text-[12px] hover:brightness-95 transition-all">
-              <Plus className="w-4 h-4" />
-              新任务
+          {/* Task Header */}
+          <div
+            className="flex items-center justify-between"
+            style={{ padding: '12px 14px', borderBottom: '1px solid var(--border-default)' }}
+          >
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-title)' }}>任务</span>
+            <button
+              className="flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors"
+              style={{ width: 24, height: 24 }}
+            >
+              <Plus style={{ width: 14, height: 14 }} className="text-[var(--text-light)]" strokeWidth={2} />
             </button>
           </div>
 
-          {/* Agent Selector */}
-          <div className="p-3 border-b border-[var(--border-default)]">
-            <h3 className="text-[11px] font-medium text-[var(--text-light)] uppercase tracking-wide mb-2">
-              选择 Agent
-            </h3>
-            <div className="space-y-1">
-              {agents.map(agent => (
-                <label
-                  key={agent.name}
-                  className="flex items-center gap-2 cursor-pointer hover:bg-black/5 p-1.5 rounded transition-colors"
-                >
-                  <input
-                    type="checkbox"
-                    checked={agent.selected}
-                    onChange={() => toggleAgentSelection(agent.name)}
-                    className="w-4 h-4 rounded border-[var(--border-input)]"
-                  />
-                  <span className="text-base">{agent.avatar}</span>
-                  <span className="text-[12px] text-[var(--text-body)]">{agent.displayName}</span>
-                </label>
-              ))}
-            </div>
+          {/* Task Count */}
+          <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border-default)' }}>
+            <span style={{ fontSize: 11, color: '#8A8A8A' }}>{tasks.length} 个任务</span>
           </div>
 
           {/* Task List */}
-          <div className="flex-1 overflow-auto p-3">
-            <h3 className="text-[11px] font-medium text-[var(--text-light)] uppercase tracking-wide mb-2">
-              任务列表
-            </h3>
-            <div className="space-y-2">
+          <div className="flex-1 overflow-auto" style={{ padding: 8 }}>
+            <div className="flex flex-col" style={{ gap: 6 }}>
               {tasks.map(task => (
                 <div
                   key={task.id}
-                  className="p-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-default)] text-[12px]"
+                  className="flex items-center rounded-lg transition-colors hover:bg-black/5"
+                  style={{ padding: '8px 10px', gap: 8 }}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className={`
-                      w-2 h-2 rounded-full
-                      ${task.status === 'completed' ? 'bg-[var(--color-green)]' : ''}
-                      ${task.status === 'running' ? 'bg-[var(--color-blue)] animate-pulse' : ''}
-                      ${task.status === 'pending' ? 'bg-[var(--text-light)]' : ''}
-                    `} />
-                    <span className={task.status === 'completed' ? 'line-through text-[var(--text-muted)]' : ''}>
-                      {task.title}
-                    </span>
-                  </div>
+                  <span className={`
+                    w-2 h-2 rounded-full flex-shrink-0
+                    ${task.status === 'completed' ? 'bg-[var(--color-green)]' : ''}
+                    ${task.status === 'running' ? 'bg-[var(--color-blue)] animate-pulse' : ''}
+                    ${task.status === 'pending' ? 'bg-[var(--text-light)]' : ''}
+                  `} />
+                  <span
+                    className={task.status === 'completed' ? 'line-through' : ''}
+                    style={{
+                      fontSize: 12,
+                      color: task.status === 'completed' ? '#8A8A8A' : 'var(--text-body)'
+                    }}
+                  >
+                    {task.title}
+                  </span>
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* Task Input */}
-          <div className="p-3 border-t border-[var(--border-default)]">
-            <div className="flex items-center gap-1 flex-wrap mb-2">
-              <span className="text-[11px] text-[var(--text-light)]">@</span>
-              {agents.filter(a => a.selected).map(agent => (
-                <span
-                  key={agent.name}
-                  className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[var(--color-blue-light)] text-[var(--color-blue)] text-[10px]"
-                >
-                  {agent.avatar} {agent.displayName}
-                </span>
-              ))}
-            </div>
-            <div className="relative">
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="给 Agent 们发送指令..."
-                className="w-full px-3 py-2 pr-10 rounded-lg text-[12px] border border-[var(--border-input)] bg-[var(--bg-primary)]
-                  placeholder:text-[var(--text-placeholder)]
-                  focus:outline-none focus:border-[var(--color-blue)]"
-              />
-              <button
-                onClick={handleSend}
-                disabled={!inputValue.trim()}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded bg-[var(--color-blue)] text-white disabled:opacity-50"
-              >
-                <Send className="w-3 h-3" />
-              </button>
             </div>
           </div>
         </div>
 
-        {/* Meeting Chat */}
+        {/* MeetingChat — matches design bLNSY */}
         <div
-          className="w-[420px] flex-shrink-0 border-r border-[var(--border-default)] flex flex-col"
-          style={{ background: 'var(--bg-panel)' }}
+          className="flex-shrink-0 flex flex-col justify-between"
+          style={{
+            width: 420,
+            background: 'var(--bg-content)',
+            borderRight: '1px solid var(--border-default)'
+          }}
         >
-          <div className="h-[38px] flex items-center px-3 border-b border-[var(--border-default)]">
-            <span className="text-[13px] font-semibold">会议聊天</span>
-          </div>
-
-          <div className="flex-1 overflow-auto p-4 space-y-3">
-            <div className="text-center">
-              <span className="text-[11px] text-[var(--text-light)]">欢迎！这是你的第一次集体会议...</span>
+          {/* Chat Messages */}
+          <div
+            className="flex-1 overflow-auto"
+            style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}
+          >
+            {/* Welcome */}
+            <div className="text-center" style={{ padding: '40px 16px' }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-title)', marginBottom: 8 }}>
+                FlowAI — Agent 正在互动
+              </div>
+              <div style={{ fontSize: 12, color: '#8A8A8A', lineHeight: '1.6' }}>
+                你的多位 Agent 正在准备各自的运营方案。
+                <br />
+                你可以在此查看他们的实时讨论进度。
+              </div>
             </div>
 
+            {/* Message List */}
             {messages.map((msg) => (
-              <div key={msg.id} className="flex gap-2">
-                <div className="w-7 h-7 rounded-lg bg-[var(--bg-canvas)] flex items-center justify-center flex-shrink-0 text-sm">
-                  {agents.find(a => a.name === msg.agent)?.avatar || '🤖'}
+              <div key={msg.id} className="flex" style={{ gap: 8 }}>
+                <div
+                  className="flex items-center justify-center flex-shrink-0"
+                  style={{
+                    width: 28, height: 28,
+                    borderRadius: 8,
+                    background: '#E8E8E8'
+                  }}
+                >
+                  <span style={{ fontSize: 12 }}>
+                    {agents.find(a => a.name === msg.agent)?.avatar || '🤖'}
+                  </span>
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[11px] font-medium">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center" style={{ gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-title)' }}>
                       {agents.find(a => a.name === msg.agent)?.displayName || msg.agent}
                     </span>
-                    <span className="text-[10px] text-[var(--text-light)]">
+                    <span style={{ fontSize: 10, color: '#999999' }}>
                       {msg.timestamp.toLocaleTimeString()}
                     </span>
                   </div>
-                  <div className="text-[12px] text-[var(--text-body)] bg-[var(--bg-primary)] rounded-lg px-3 py-2 border border-[var(--border-default)]">
+                  <div
+                    style={{
+                      fontSize: 12, color: 'var(--text-body)', lineHeight: '1.5',
+                      background: 'var(--bg-primary)',
+                      border: '1px solid var(--border-default)',
+                      borderRadius: 8, padding: '8px 12px'
+                    }}
+                  >
                     {msg.content}
                   </div>
                 </div>
               </div>
             ))}
           </div>
+
+          {/* Chat Input */}
+          <div
+            style={{
+              padding: '10px 14px',
+              borderTop: '1px solid var(--border-default)',
+              display: 'flex', flexDirection: 'column', gap: 6
+            }}
+          >
+            {/* Agent tags */}
+            <div className="flex items-center flex-wrap" style={{ gap: 4 }}>
+              <span style={{ fontSize: 11, color: '#8A8A8A' }}>@</span>
+              {agents.filter(a => a.selected).map(agent => (
+                <span
+                  key={agent.name}
+                  className="flex items-center"
+                  style={{
+                    padding: '2px 6px',
+                    borderRadius: 10,
+                    fontSize: 10,
+                    background: 'var(--color-blue-light)',
+                    color: 'var(--color-blue)',
+                    gap: 2
+                  }}
+                >
+                  {agent.avatar} {agent.displayName}
+                </span>
+              ))}
+            </div>
+            {/* Input */}
+            <div className="flex items-center" style={{ gap: 8 }}>
+              <div
+                className="flex-1 flex items-center"
+                style={{
+                  borderRadius: 10,
+                  border: '1px solid var(--border-input)',
+                  padding: '8px 12px',
+                  background: 'var(--bg-primary)'
+                }}
+              >
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                  placeholder="给 Agent 们发送指令..."
+                  className="flex-1 bg-transparent border-none outline-none"
+                  style={{ fontSize: 12, color: 'var(--text-body)' }}
+                />
+              </div>
+              <button
+                onClick={handleSend}
+                disabled={!inputValue.trim() || isStreaming}
+                className="flex items-center justify-center text-white hover:brightness-95 disabled:opacity-40 transition-all"
+                style={{ width: 26, height: 26, borderRadius: 13, background: 'var(--color-blue)' }}
+              >
+                <Send style={{ width: 12, height: 12 }} strokeWidth={2} />
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Live Follow Panel */}
-        <div className="flex-1 flex flex-col min-w-0">
+        {/* LiveFollowPanel — matches design qCIIl */}
+        <div
+          className="flex-1 flex flex-col min-w-0"
+          style={{ background: 'var(--bg-content)' }}
+        >
           {renderSubMode()}
         </div>
 
-        {/* File Panel */}
+        {/* FilePanel — matches design GZBjq */}
         <div
-          className="w-[180px] flex-shrink-0 border-l border-[var(--border-default)] flex flex-col"
-          style={{ background: 'var(--bg-panel)' }}
+          className="flex-shrink-0 flex flex-col"
+          style={{
+            width: 180,
+            background: 'var(--bg-panel)',
+            borderLeft: '1px solid var(--border-default)',
+            padding: '12px 10px',
+            gap: 8
+          }}
         >
-          <div className="p-3 border-b border-[var(--border-default)]">
+          {/* Title */}
+          <div className="flex items-center justify-between">
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-title)' }}>文件管理</span>
+            <Plus style={{ width: 12, height: 12 }} className="text-[#999999]" strokeWidth={2} />
+          </div>
+
+          {/* Search */}
+          <div
+            className="flex items-center"
+            style={{
+              height: 28, borderRadius: 10,
+              background: '#EEEEEE',
+              padding: '0 8px', gap: 4
+            }}
+          >
+            <Search style={{ width: 11, height: 11 }} className="text-[#999999]" strokeWidth={2} />
             <input
               type="text"
-              placeholder="搜索文件..."
-              className="w-full px-2 py-1.5 rounded-lg text-[11px] border border-[var(--border-input)] bg-[var(--bg-primary)]
-                placeholder:text-[var(--text-placeholder)]
-                focus:outline-none focus:border-[var(--color-blue)]"
+              placeholder="搜索..."
+              className="flex-1 bg-transparent border-none outline-none"
+              style={{ fontSize: 11, color: 'var(--text-body)' }}
             />
           </div>
 
-          <div className="flex-1 overflow-auto p-3">
-            <div className="space-y-1">
-              {[
-                { name: '视频素材', icon: '🎬' },
-                { name: '文案输出', icon: '📝' },
-                { name: 'RSS数据', icon: '📰' },
-                { name: '设计系统', icon: '🎨' }
-              ].map((folder) => (
+          {/* File List */}
+          <div className="flex-1 overflow-auto flex flex-col" style={{ gap: 6 }}>
+            {[
+              { name: '视频素材', icon: Folder },
+              { name: '文案输出', icon: Folder },
+              { name: '需求文档.md', icon: FileText },
+              { name: 'RSS数据', icon: Folder },
+              { name: '封面设计.png', icon: Image },
+              { name: '日程安排.md', icon: FileText }
+            ].map((file) => {
+              const Icon = file.icon
+              return (
                 <button
-                  key={folder.name}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[12px] hover:bg-black/5 transition-colors text-left"
+                  key={file.name}
+                  className="flex items-center w-full rounded-lg hover:bg-black/5 transition-colors text-left"
+                  style={{ padding: '6px 8px', gap: 6 }}
                 >
-                  <span>{folder.icon}</span>
-                  <span className="truncate">{folder.name}</span>
+                  <Icon style={{ width: 14, height: 14, flexShrink: 0 }} className="text-[var(--text-muted)]" strokeWidth={2} />
+                  <span className="truncate" style={{ fontSize: 11, color: 'var(--text-body)' }}>{file.name}</span>
                 </button>
-              ))}
-            </div>
+              )
+            })}
           </div>
         </div>
       </div>

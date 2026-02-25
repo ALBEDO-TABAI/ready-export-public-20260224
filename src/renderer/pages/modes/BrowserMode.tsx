@@ -118,94 +118,93 @@ export default function BrowserMode() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Tab Bar */}
+    <div className="flex flex-col h-full" style={{ background: 'var(--bg-content)' }}>
+      {/* UnifiedTabBar — matches design zlBYy */}
       <div
-        className="h-[34px] flex items-center px-2 border-b border-[var(--border-default)]"
-        style={{ background: 'var(--bg-toolbar)' }}
+        className="flex items-center justify-between"
+        style={{
+          height: 38,
+          padding: '0 12px',
+          background: '#F8F7F4',
+          borderBottom: '1px solid var(--border-default)'
+        }}
       >
-        {/* Navigation Buttons */}
-        <div className="flex items-center gap-0.5 mr-1">
-          <button className="p-1 rounded hover:bg-black/5 transition-colors">
-            <ArrowLeft className="w-3.5 h-3.5 text-[var(--text-light)]" strokeWidth={2} />
-          </button>
-          <button className="p-1 rounded hover:bg-black/5 transition-colors">
-            <ArrowRight className="w-3.5 h-3.5 text-[var(--text-light)]" strokeWidth={2} />
-          </button>
+        {/* Left: refresh + tabs + new tab */}
+        <div className="flex items-center" style={{ gap: 4 }}>
+          {/* Refresh Button */}
           <button
             onClick={handleRefresh}
-            className="p-1 rounded hover:bg-black/5 transition-colors"
+            className="flex items-center justify-center rounded-[10px] hover:bg-black/5 transition-colors"
+            style={{ width: 28, height: 28 }}
           >
             {activeTab?.loading
-              ? <Loader2 className="w-3.5 h-3.5 text-[var(--color-blue)] animate-spin" strokeWidth={2} />
-              : <RefreshCw className="w-3.5 h-3.5 text-[var(--text-muted)]" strokeWidth={2} />
+              ? <Loader2 style={{ width: 14, height: 14 }} className="text-[var(--color-blue)] animate-spin" strokeWidth={2} />
+              : <RefreshCw style={{ width: 14, height: 14 }} className="text-[var(--text-light)]" strokeWidth={2} />
             }
           </button>
-        </div>
 
-        {/* Tabs */}
-        <div className="flex-1 flex items-center gap-1 overflow-hidden">
+          {/* Tabs */}
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => handleTabClick(tab.id)}
-              className={`
-                flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] max-w-[160px]
-                transition-all duration-200
-                ${tab.id === activeTabId
-                  ? 'bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-sm'
-                  : 'hover:bg-black/5'
-                }
-              `}
+              className="flex items-center max-w-[160px] transition-all duration-200"
+              style={{
+                gap: 6,
+                padding: '6px 12px',
+                borderRadius: '6px 6px 0 0',
+                fontSize: 12,
+                background: tab.id === activeTabId ? '#FFFFFF' : 'transparent',
+                borderRight: tab.id === activeTabId ? '1px solid var(--border-default)' : undefined,
+                color: tab.id === activeTabId ? 'var(--text-title)' : 'var(--text-gray)',
+              }}
             >
               {tab.loading
-                ? <Loader2 className="w-3 h-3 text-[var(--color-blue)] animate-spin flex-shrink-0" />
-                : <Globe className="w-3 h-3 text-[var(--text-light)] flex-shrink-0" />
+                ? <Loader2 style={{ width: 12, height: 12 }} className="text-[var(--color-blue)] animate-spin flex-shrink-0" />
+                : <Globe style={{ width: 12, height: 12 }} className="flex-shrink-0" strokeWidth={2} />
               }
               <span className="truncate flex-1">{tab.title}</span>
               <span
                 role="button"
                 onClick={(e) => { e.stopPropagation(); handleCloseTab(tab.id) }}
-                className="p-0.5 rounded hover:bg-black/10 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                className="rounded hover:bg-black/10 transition-colors cursor-pointer"
+                style={{ padding: 2 }}
               >
-                <X className="w-3 h-3" strokeWidth={2} />
+                <X style={{ width: 10, height: 10 }} strokeWidth={2} />
               </span>
             </button>
           ))}
+
+          {/* New Tab */}
+          <button
+            onClick={handleNewTab}
+            className="flex items-center justify-center hover:bg-black/5 transition-colors"
+            style={{ width: 28, height: 28 }}
+          >
+            <Plus style={{ width: 14, height: 14 }} className="text-[var(--text-muted)]" strokeWidth={2} />
+          </button>
         </div>
 
-        {/* New Tab */}
-        <button
-          onClick={handleNewTab}
-          className="p-1 rounded hover:bg-black/5 transition-colors mx-1"
-        >
-          <Plus className="w-4 h-4 text-[var(--text-muted)]" strokeWidth={2} />
-        </button>
-
-        {/* Split View */}
-        <div className="relative">
+        {/* Right: split buttons */}
+        <div className="flex items-center" style={{ gap: 6 }}>
           <button
-            onClick={() => setShowSplitMenu(!showSplitMenu)}
-            className="p-1 rounded hover:bg-black/5 transition-colors"
+            className="flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors"
+            style={{ width: 24, height: 24 }}
           >
-            <Split className="w-4 h-4 text-[var(--text-muted)]" strokeWidth={2} />
+            <Columns2 style={{ width: 14, height: 14 }} className="text-[var(--text-light)]" strokeWidth={2} />
           </button>
-          {showSplitMenu && (
-            <div
-              className="absolute right-0 top-full mt-1 py-1 rounded-lg shadow-lg border border-[var(--border-default)] z-10"
-              style={{ background: 'var(--bg-panel)' }}
-            >
-              <button className="flex items-center gap-2 px-3 py-1.5 text-[12px] hover:bg-black/5 w-full text-left">
-                <Columns2 className="w-4 h-4" /> 左右分屏
-              </button>
-              <button className="flex items-center gap-2 px-3 py-1.5 text-[12px] hover:bg-black/5 w-full text-left">
-                <Rows2 className="w-4 h-4" /> 上下分屏
-              </button>
-              <button className="flex items-center gap-2 px-3 py-1.5 text-[12px] hover:bg-black/5 w-full text-left">
-                <LayoutGrid className="w-4 h-4" /> 网格分屏
-              </button>
-            </div>
-          )}
+          <button
+            className="flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors"
+            style={{ width: 24, height: 24 }}
+          >
+            <Rows2 style={{ width: 14, height: 14 }} className="text-[var(--text-light)]" strokeWidth={2} />
+          </button>
+          <button
+            className="flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors"
+            style={{ width: 24, height: 24 }}
+          >
+            <LayoutGrid style={{ width: 14, height: 14 }} className="text-[var(--text-light)]" strokeWidth={2} />
+          </button>
         </div>
       </div>
 

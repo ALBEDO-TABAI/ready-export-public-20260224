@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { History, Minus, AtSign, Hash, Paperclip, Send, ChevronDown } from 'lucide-react'
+import { History, Minus, AtSign, Plus, Send, ChevronDown, Maximize2 } from 'lucide-react'
 import { useAgent } from '../../stores/useAgent'
 
 interface ChatPanelProps {
@@ -7,7 +7,7 @@ interface ChatPanelProps {
   title?: string
 }
 
-export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: ChatPanelProps) {
+export default function ChatPanel({ width = 380, title = 'New Task' }: ChatPanelProps) {
   const {
     agents,
     messages,
@@ -46,62 +46,92 @@ export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: Ch
 
   return (
     <div
-      className="flex-shrink-0 flex flex-col border-l border-[var(--border-default)]"
+      className="flex-shrink-0 flex flex-col"
       style={{
         width,
         background: 'var(--bg-panel)',
+        borderLeft: '1px solid var(--border-default)',
         boxShadow: '-3px 0 12px rgba(0,0,0,0.06)'
       }}
     >
-      {/* Header */}
-      <div className="h-[38px] flex items-center justify-between px-3.5 border-b border-[var(--border-default)]">
-        <span className="text-[13px] font-semibold text-[var(--text-title)]">{title}</span>
-        <div className="flex items-center gap-1.5">
+      {/* Header — chatHead */}
+      <div
+        className="flex items-center justify-between"
+        style={{ height: 38, padding: '0 14px', borderBottom: '1px solid var(--border-default)' }}
+      >
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-title)' }}>{title}</span>
+        <div className="flex items-center" style={{ gap: 6 }}>
           <button className="p-1 rounded hover:bg-black/5 transition-colors">
-            <History className="w-[14px] h-[14px] text-[var(--text-light)]" strokeWidth={2} />
+            <History style={{ width: 14, height: 14 }} className="text-[#999999]" strokeWidth={2} />
           </button>
           <button className="p-1 rounded hover:bg-black/5 transition-colors">
-            <Minus className="w-[14px] h-[14px] text-[var(--text-light)]" strokeWidth={2} />
+            <Minus style={{ width: 14, height: 14 }} className="text-[#999999]" strokeWidth={2} />
           </button>
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-auto p-4 space-y-3.5">
-        {/* Welcome Card */}
-        <div className="flex gap-3">
+      {/* ChatMessages */}
+      <div
+        className="flex-1 overflow-auto"
+        style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}
+      >
+        {/* Welcome Card — m1 */}
+        <div
+          className="flex flex-col items-center"
+          style={{ gap: 16, padding: '50px 16px' }}
+        >
+          {/* Avatar — R logo */}
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'var(--bg-canvas)' }}
+            className="flex items-center justify-center"
+            style={{
+              width: 40, height: 40,
+              borderRadius: 10,
+              background: '#E8E8E8'
+            }}
           >
-            <span className="text-xl">🤖</span>
+            <span style={{ fontSize: 20, fontWeight: 700, color: '#1A1A1A' }}>R</span>
           </div>
-          <div>
-            <h3 className="text-[15px] font-semibold text-[var(--text-title)] mb-1">
-              欢迎使用 Ready
-            </h3>
-            <p className="text-[13px] text-[var(--text-muted)] leading-relaxed">
-              我是你的 AI 管家，可以帮你协调文案、剪辑、分析等 Agent 完成自媒体创作任务。
-            </p>
-          </div>
-        </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-2 mt-4">
-          <button
-            onClick={() => setInputValue('帮我分析最近的热门视频趋势')}
-            className="p-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] hover:border-[var(--color-blue)] hover:bg-[var(--color-blue-light)] transition-all text-left"
+          {/* Title */}
+          <span style={{ fontSize: 15, fontWeight: 600, color: '#333333' }}>Ready AI Assistant</span>
+
+          {/* Description */}
+          <span
+            style={{
+              fontSize: 13, fontWeight: 500, color: '#8A8A8A',
+              textAlign: 'center', lineHeight: '1.5'
+            }}
           >
-            <div className="text-[12px] font-medium text-[var(--text-title)] mb-1">📊 内容优化</div>
-            <div className="text-[11px] text-[var(--text-muted)]">分析热门数据...</div>
-          </button>
-          <button
-            onClick={() => setInputValue('帮我写一篇关于 AI 创作的文案')}
-            className="p-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] hover:border-[var(--color-blue)] hover:bg-[var(--color-blue-light)] transition-all text-left"
-          >
-            <div className="text-[12px] font-medium text-[var(--text-title)] mb-1">📝 写文案</div>
-            <div className="text-[11px] text-[var(--text-muted)]">写一篇...</div>
-          </button>
+            你的智能工作区助手。随时提问、创作内容、分析数据。
+          </span>
+
+          {/* Quick Action Cards — m1cards */}
+          <div className="flex w-full" style={{ gap: 8 }}>
+            <button
+              onClick={() => setInputValue('帮我分析最近的热门视频趋势')}
+              className="flex-1 text-left hover:border-[var(--color-blue)] transition-colors"
+              style={{
+                padding: 12, borderRadius: 8,
+                border: '1px solid rgba(91,141,239,0.15)',
+                display: 'flex', flexDirection: 'column', gap: 4
+              }}
+            >
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-title)' }}>📊 内容优化</span>
+              <span style={{ fontSize: 11, color: '#8A8A8A' }}>分析热门数据...</span>
+            </button>
+            <button
+              onClick={() => setInputValue('帮我写一篇关于 AI 创作的文案')}
+              className="flex-1 text-left hover:border-[var(--color-blue)] transition-colors"
+              style={{
+                padding: 12, borderRadius: 8,
+                border: '1px solid rgba(91,141,239,0.15)',
+                display: 'flex', flexDirection: 'column', gap: 4
+              }}
+            >
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-title)' }}>📝 写作文案</span>
+              <span style={{ fontSize: 11, color: '#8A8A8A' }}>创作优质内容...</span>
+            </button>
+          </div>
         </div>
 
         {/* Message List */}
@@ -112,22 +142,22 @@ export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: Ch
           >
             <div
               className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${msg.type === 'user'
-                  ? 'bg-[var(--color-blue)] text-white'
-                  : 'bg-[var(--bg-canvas)]'
+                ? 'bg-[var(--color-blue)] text-white'
+                : 'bg-[#E8E8E8]'
                 }`}
             >
               {msg.type === 'user' ? (
                 <span className="text-[12px] font-medium">我</span>
               ) : (
-                <span>{agents.find(a => a.name === msg.agent)?.avatar || '🤖'}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#1A1A1A' }}>R</span>
               )}
             </div>
             <div
               className={`max-w-[80%] px-3 py-2 rounded-xl text-[13px] leading-relaxed ${msg.type === 'user'
-                  ? 'bg-[var(--color-blue)] text-white'
-                  : msg.type === 'system'
-                    ? 'bg-red-50 text-red-600 border border-red-100'
-                    : 'bg-[var(--bg-primary)] border border-[var(--border-default)]'
+                ? 'bg-[var(--color-blue)] text-white'
+                : msg.type === 'system'
+                  ? 'bg-red-50 text-red-600 border border-red-100'
+                  : 'bg-[var(--bg-primary)] border border-[var(--border-default)]'
                 }`}
             >
               {msg.content}
@@ -137,12 +167,11 @@ export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: Ch
 
         {isStreaming && (() => {
           const streamMsg = messages.find(m => m.id === (useAgent.getState().streamingMessageId))
-          // Only show bounce dots if the streaming message is empty (hasn't received any chunks yet)
           if (!streamMsg || streamMsg.content.length === 0) {
             return (
               <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[var(--bg-canvas)] flex items-center justify-center">
-                  <span>{currentAgentData?.avatar}</span>
+                <div className="w-8 h-8 rounded-lg bg-[#E8E8E8] flex items-center justify-center">
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#1A1A1A' }}>R</span>
                 </div>
                 <div className="px-3 py-2 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-default)]">
                   <div className="flex gap-1">
@@ -160,75 +189,87 @@ export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: Ch
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
-      <div className="p-3 border-t border-[var(--border-default)]">
-        {/* Agent Selector */}
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
-          <span className="text-[11px] text-[var(--text-light)]">@</span>
-          {agents.filter(a => a.selected).map(agent => (
-            <button
-              key={agent.name}
-              onClick={() => selectAgent(agent.name)}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] transition-colors ${currentAgent === agent.name
-                  ? 'bg-[var(--color-blue-light)] text-[var(--color-blue)]'
-                  : 'bg-[var(--bg-canvas)] text-[var(--text-muted)] hover:bg-[var(--border-default)]'
-                }`}
-            >
-              <span>{agent.avatar}</span>
-              <span>{agent.displayName}</span>
-              {currentAgent === agent.name && <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-blue)]" />}
-            </button>
-          ))}
-          <button
-            onClick={() => setShowAgentSelect(!showAgentSelect)}
-            className="p-0.5 rounded hover:bg-black/5 transition-colors"
-          >
-            <ChevronDown className="w-3 h-3 text-[var(--text-light)]" />
-          </button>
-        </div>
-
-        {/* Input Box */}
-        <div className="relative">
+      {/* ChatInputArea — matches design R65YI */}
+      <div
+        style={{
+          padding: '10px 14px',
+          borderTop: '1px solid var(--border-default)',
+          display: 'flex', flexDirection: 'column', gap: 8
+        }}
+      >
+        {/* Input Box — inputBox */}
+        <div
+          className="flex items-center"
+          style={{
+            borderRadius: 10,
+            background: 'var(--bg-primary)',
+            border: '1px solid var(--border-input)',
+            padding: '10px 14px'
+          }}
+        >
           <input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={`给 ${currentAgentData?.displayName || 'Agent'} 发送指令...`}
-            className="w-full px-3 py-2.5 pr-24 rounded-[10px] text-[13px] border border-[var(--border-input)] bg-[var(--bg-primary)]
-              placeholder:text-[var(--text-placeholder)]
-              focus:outline-none focus:border-[var(--color-blue)] focus:ring-1 focus:ring-[var(--color-blue)]"
+            placeholder="Agent Neo 现在可以为你完成什么？"
+            className="flex-1 bg-transparent border-none outline-none"
+            style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-body)' }}
           />
+        </div>
 
-          {/* Input Actions */}
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-            <button className="p-1.5 rounded hover:bg-black/5 transition-colors">
-              <AtSign className="w-4 h-4 text-[var(--text-light)]" strokeWidth={2} />
+        {/* Bottom Bar — inputBtm */}
+        <div className="flex items-center justify-between">
+          {/* Left: add + mode + model */}
+          <div className="flex items-center" style={{ gap: 6 }}>
+            <button
+              className="flex items-center justify-center hover:bg-black/5 transition-colors"
+              style={{ width: 24, height: 24, borderRadius: 8, border: '1px solid var(--border-input)' }}
+            >
+              <Plus style={{ width: 12, height: 12 }} className="text-[#6A6A6A]" strokeWidth={2} />
             </button>
-            <button className="p-1.5 rounded hover:bg-black/5 transition-colors">
-              <Hash className="w-4 h-4 text-[var(--text-light)]" strokeWidth={2} />
+            {/* Agent selector */}
+            <button
+              onClick={() => setShowAgentSelect(!showAgentSelect)}
+              className="flex items-center hover:bg-black/5 transition-colors"
+              style={{ padding: '3px 8px', borderRadius: 8, border: '1px solid var(--border-input)', gap: 4 }}
+            >
+              <span style={{ fontSize: 11, color: '#6A6A6A' }}>{currentAgentData?.avatar}</span>
+              <span style={{ fontSize: 11, color: '#6A6A6A' }}>{currentAgentData?.displayName || '管家'}</span>
+              <ChevronDown style={{ width: 10, height: 10 }} className="text-[#999999]" />
             </button>
-            <button className="p-1.5 rounded hover:bg-black/5 transition-colors">
-              <Paperclip className="w-4 h-4 text-[var(--text-light)]" strokeWidth={2} />
+            {/* Model selector */}
+            <button
+              className="flex items-center hover:bg-black/5 transition-colors"
+              style={{ padding: '3px 8px', borderRadius: 8, border: '1px solid var(--border-input)', gap: 4 }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-green)]" />
+              <span style={{ fontSize: 11, color: '#6A6A6A' }}>Claude</span>
+              <ChevronDown style={{ width: 10, height: 10 }} className="text-[#999999]" />
+            </button>
+          </div>
+
+          {/* Right: @ + expand + send */}
+          <div className="flex items-center" style={{ gap: 6 }}>
+            <button className="p-1 rounded hover:bg-black/5 transition-colors">
+              <AtSign style={{ width: 15, height: 15 }} className="text-[#6A6A6A]" strokeWidth={2} />
+            </button>
+            <button className="p-1 rounded hover:bg-black/5 transition-colors">
+              <Maximize2 style={{ width: 14, height: 14 }} className="text-[#6A6A6A]" strokeWidth={2} />
             </button>
             <button
               onClick={handleSend}
               disabled={!inputValue.trim() || isStreaming}
-              className="p-1.5 rounded bg-[var(--color-blue)] text-white hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="flex items-center justify-center text-white hover:brightness-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              style={{
+                width: 26, height: 26,
+                borderRadius: 13,
+                background: 'var(--color-blue)'
+              }}
             >
-              <Send className="w-4 h-4" strokeWidth={2} />
+              <Send style={{ width: 13, height: 13 }} strokeWidth={2} />
             </button>
           </div>
-        </div>
-
-        {/* Model Selector */}
-        <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[var(--color-green)]" />
-            <span className="text-[11px] text-[var(--text-muted)]">Claude</span>
-            <ChevronDown className="w-3 h-3 text-[var(--text-light)]" />
-          </div>
-          <span className="text-[11px] text-[var(--text-light)]">⌘ ↵ 发送</span>
         </div>
       </div>
     </div>
