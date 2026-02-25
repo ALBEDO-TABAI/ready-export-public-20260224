@@ -348,10 +348,15 @@ export default function ImageMode() {
     <div className="flex flex-col h-full">
       <div className="flex-1 flex overflow-hidden">
 
-        {/* ===== Tools Rail (44px) ===== */}
+        {/* ToolsPanel — matches design caMJS */}
         <div
-          className="w-11 flex flex-col items-center py-3 gap-1 border-r border-[var(--border-default)] flex-shrink-0"
-          style={{ background: 'var(--bg-panel)' }}
+          className="flex flex-col items-center gap-1 flex-shrink-0"
+          style={{
+            width: 48,
+            padding: '12px 0',
+            background: '#FAFAF9',
+            borderRight: '1px solid #E8E8E8'
+          }}
         >
           {tools.map((tool) => (
             <button
@@ -389,10 +394,10 @@ export default function ImageMode() {
           </button>
         </div>
 
-        {/* ===== Canvas Area ===== */}
+        {/* CanvasArea — matches design qWdG4 */}
         <div
           className="flex-1 relative overflow-auto"
-          style={{ background: 'var(--bg-canvas, #E8E8E8)' }}
+          style={{ background: '#F0EFED' }}
         >
           <div
             className="absolute inset-0 flex items-center justify-center"
@@ -487,13 +492,17 @@ export default function ImageMode() {
           </div>
         </div>
 
-        {/* ===== Right Panel (260px) — Properties + Layers ===== */}
+        {/* PropertiesPanel — matches design 9C9vi */}
         <div
-          className="w-[260px] flex-shrink-0 border-l border-[var(--border-default)] flex flex-col overflow-hidden"
-          style={{ background: 'var(--bg-panel)' }}
+          className="flex-shrink-0 flex flex-col overflow-hidden"
+          style={{
+            width: 268,
+            background: '#FAFAF9',
+            borderLeft: '1px solid #E8E8E8'
+          }}
         >
           {/* Properties Inspector */}
-          <div className="flex-1 overflow-auto p-4">
+          <div className="flex-1 overflow-auto" style={{ padding: '20px 16px' }}>
             <h3 className="text-[13px] font-semibold text-[var(--text-title)] mb-4">属性</h3>
 
             {selectedObject ? (

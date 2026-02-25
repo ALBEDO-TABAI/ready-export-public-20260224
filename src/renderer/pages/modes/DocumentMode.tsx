@@ -263,11 +263,16 @@ export default function DocumentMode() {
   ]
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Toolbar */}
+    <div className="flex flex-col h-full" style={{ background: 'var(--bg-content)' }}>
+      {/* Toolbar — matches design pYbC8 */}
       <div
-        className="h-[40px] flex items-center justify-between px-3 border-b border-[var(--border-default)]"
-        style={{ background: 'var(--bg-toolbar)' }}
+        className="flex items-center justify-between"
+        style={{
+          height: 38,
+          padding: '0 16px',
+          background: '#FAFAF9',
+          borderBottom: '1px solid var(--border-default)'
+        }}
       >
         {/* Format buttons */}
         <div className="flex items-center gap-0.5">
@@ -345,11 +350,11 @@ export default function DocumentMode() {
         </div>
       </div>
 
-      {/* Content area */}
-      <div className="flex-1 overflow-hidden flex">
+      {/* Content area — matches design DocumentContent */}
+      <div className="flex-1 overflow-hidden flex" style={{ background: '#FFFFFF' }}>
         {docMode === 'docx' ? (
           <div className="flex-1 overflow-auto">
-            <div className="max-w-[800px] mx-auto p-8">
+            <div style={{ padding: '30px 50px', maxWidth: 800, margin: '0 auto' }}>
               <div
                 className="prose prose-sm max-w-none text-[var(--text-body)]
                   [&_h1]:text-[24px] [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:text-[var(--text-title)]
@@ -361,7 +366,7 @@ export default function DocumentMode() {
           </div>
         ) : docMode === 'xlsx' ? (
           <div className="flex-1 overflow-auto">
-            <div className="max-w-[1000px] mx-auto p-8">
+            <div style={{ padding: '30px 50px', maxWidth: 1000, margin: '0 auto' }}>
               <div className="text-[14px] text-[var(--text-body)] space-y-4">
                 {content.split(/\n## Sheet: /).map((section, i) => {
                   if (i === 0 && !section.trim()) return null
@@ -402,7 +407,7 @@ export default function DocumentMode() {
             {/* Editor pane */}
             {(viewMode === 'edit' || viewMode === 'split') && (
               <div className={`${viewMode === 'split' ? 'w-1/2 border-r border-[var(--border-default)]' : 'flex-1'} overflow-auto`}>
-                <div className="max-w-[800px] mx-auto p-8">
+                <div style={{ padding: '30px 50px', maxWidth: 800, margin: '0 auto' }}>
                   <textarea
                     ref={editorRef}
                     value={content}
@@ -421,9 +426,9 @@ export default function DocumentMode() {
             {/* Preview pane */}
             {(viewMode === 'preview' || viewMode === 'split') && (
               <div className={`${viewMode === 'split' ? 'w-1/2' : 'flex-1'} overflow-auto`}
-                style={{ background: 'var(--bg-editor)' }}
+                style={{ background: '#FAFAF9' }}
               >
-                <div className="max-w-[800px] mx-auto p-8">
+                <div style={{ padding: '30px 50px', maxWidth: 800, margin: '0 auto' }}>
                   <div
                     className="md-preview text-[var(--text-body)]"
                     dangerouslySetInnerHTML={{ __html: renderedHtml }}

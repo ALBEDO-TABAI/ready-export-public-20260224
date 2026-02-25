@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { 
+import {
   MousePointer, Type, Square, Image, Music, Subtitles, Mic, Sparkles,
   Trash2, Scissors, Copy, SkipBack, Play, SkipForward, Volume2, ZoomIn, Maximize
 } from 'lucide-react'
@@ -25,7 +25,7 @@ export default function VideoMode() {
   const [currentTime, setCurrentTime] = useState(6)
   const [duration] = useState(117)
   const [zoom, setZoom] = useState(1)
-  
+
   // 使用 useState 管理时间轴数据
   const [videoClips, setVideoClips] = useState<TimelineClip[]>([
     { id: '1', start: 0, end: 45, label: 'hook', color: '#5B8DEF' },
@@ -81,18 +81,18 @@ export default function VideoMode() {
   // 获取选中的 clip 数据
   const getSelectedClipData = useCallback((): { clip: TimelineClip | undefined; type: ClipType; setter: React.Dispatch<React.SetStateAction<TimelineClip[]>> } => {
     if (!selectedClip) return { clip: undefined, type: 'video', setter: setVideoClips }
-    
+
     if (selectedClip.type === 'video') {
-      return { 
-        clip: videoClips.find(c => c.id === selectedClip.id), 
+      return {
+        clip: videoClips.find(c => c.id === selectedClip.id),
         type: 'video',
-        setter: setVideoClips 
+        setter: setVideoClips
       }
     } else {
-      return { 
-        clip: subtitleClips.find(c => c.id === selectedClip.id), 
+      return {
+        clip: subtitleClips.find(c => c.id === selectedClip.id),
         type: 'subtitle',
-        setter: setSubtitleClips 
+        setter: setSubtitleClips
       }
     }
   }, [selectedClip, videoClips, subtitleClips])
@@ -100,7 +100,7 @@ export default function VideoMode() {
   // 分割功能：在 currentTime 处将选中的 clip 分成两段
   const handleSplit = useCallback(() => {
     if (!selectedClip) return
-    
+
     const { clip, type, setter } = getSelectedClipData()
     if (!clip) return
 
@@ -117,7 +117,7 @@ export default function VideoMode() {
       id: `${clip.id}-split-left-${Date.now()}`,
       end: currentTime
     }
-    
+
     const rightClip: TimelineClip = {
       ...clip,
       id: `${clip.id}-split-right-${Date.now()}`,
@@ -139,7 +139,7 @@ export default function VideoMode() {
   // 复制功能：复制选中的 clip，生成新 ID
   const handleCopy = useCallback(() => {
     if (!selectedClip) return
-    
+
     const { clip, type, setter } = getSelectedClipData()
     if (!clip) return
 
@@ -169,13 +169,13 @@ export default function VideoMode() {
   // 删除功能：删除选中的 clip
   const handleDelete = useCallback(() => {
     if (!selectedClip) return
-    
+
     const { clip, setter } = getSelectedClipData()
     if (!clip) return
 
     // 更新状态：移除选中的 clip
     setter(prevClips => prevClips.filter(c => c.id !== clip.id))
-    
+
     // 清除选中状态
     setSelectedClip(null)
   }, [selectedClip, getSelectedClipData])
@@ -185,10 +185,15 @@ export default function VideoMode() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Toolbar */}
-      <div 
-        className="h-[40px] flex items-center justify-between px-4 border-b border-[var(--border-default)]"
-        style={{ background: 'var(--bg-toolbar)' }}
+      {/* EditorToolbar — matches design mvkFc */}
+      <div
+        className="flex items-center justify-between"
+        style={{
+          height: 40,
+          padding: '0 16px',
+          background: '#FAFAF9',
+          borderBottom: '1px solid #E8E8E8'
+        }}
       >
         <div className="flex items-center gap-3">
           <span className="text-[13px] font-medium text-[var(--text-title)]">产品开箱视频.mp4</span>
@@ -212,10 +217,16 @@ export default function VideoMode() {
 
       {/* Main Editor */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Tools Panel */}
-        <div 
-          className="w-12 flex flex-col items-center py-3 gap-1 border-r border-[var(--border-default)]"
-          style={{ background: 'var(--bg-panel)' }}
+        {/* ToolsPanel — matches design caMJS */}
+        <div
+          className="flex flex-col items-center gap-1"
+          style={{
+            width: 48,
+            flexShrink: 0,
+            padding: '12px 0',
+            background: '#FAFAF9',
+            borderRight: '1px solid #E8E8E8'
+          }}
         >
           {tools.map((tool) => (
             <button
@@ -225,8 +236,8 @@ export default function VideoMode() {
               className={`
                 w-9 h-9 rounded-lg flex items-center justify-center
                 transition-all duration-200
-                ${activeTool === tool.id 
-                  ? 'bg-[var(--color-blue-light)] text-[var(--color-blue)]' 
+                ${activeTool === tool.id
+                  ? 'bg-[var(--color-blue-light)] text-[var(--color-blue)]'
                   : 'text-[#6A6A6A] hover:bg-black/5'
                 }
               `}
@@ -234,18 +245,18 @@ export default function VideoMode() {
               <tool.icon className="w-4 h-4" strokeWidth={2} />
             </button>
           ))}
-          
+
           <div className="w-6 h-px bg-[var(--border-default)] my-1" />
-          
+
           <button className="w-9 h-9 rounded-lg flex items-center justify-center text-[var(--color-blue)] hover:bg-[var(--color-blue-light)] transition-all">
             <Sparkles className="w-4 h-4" strokeWidth={2} />
           </button>
         </div>
 
-        {/* Preview Canvas */}
-        <div 
+        {/* EditorBody / CanvasArea — matches design gnZRM */}
+        <div
           className="flex-1 flex flex-col"
-          style={{ background: 'var(--bg-canvas)' }}
+          style={{ background: '#F7F6F4' }}
         >
           <div className="flex-1 flex items-center justify-center p-4">
             <div className="relative bg-black rounded-lg overflow-hidden shadow-lg" style={{ width: 480, height: 270 }}>
@@ -253,17 +264,17 @@ export default function VideoMode() {
               <div className="absolute inset-0 flex items-center justify-center">
                 <span className="text-4xl">🎬</span>
               </div>
-              
+
               {/* Subtitle Overlay */}
               <div className="absolute bottom-8 left-0 right-0 text-center">
                 <span className="px-4 py-1 bg-black/60 text-white text-[14px] rounded">
                   大家好，欢迎来到 Ready
                 </span>
               </div>
-              
+
               {/* Play Button Overlay */}
               {!isPlaying && (
-                <button 
+                <button
                   onClick={() => setIsPlaying(true)}
                   className="absolute inset-0 flex items-center justify-center bg-black/20"
                 >
@@ -276,12 +287,12 @@ export default function VideoMode() {
           </div>
 
           {/* Playback Controls */}
-          <div 
-            className="h-9 flex items-center justify-between px-4 border-t border-[var(--border-default)]"
-            style={{ background: 'var(--bg-toolbar)' }}
+          <div
+            className="h-9 flex items-center justify-between px-4"
+            style={{ background: '#FAFAF9', borderTop: '1px solid #E8E8E8' }}
           >
             <div className="flex items-center gap-1">
-              <button 
+              <button
                 onClick={handleDelete}
                 disabled={!hasSelectedClip}
                 className={`p-1.5 rounded transition-colors ${hasSelectedClip ? 'hover:bg-black/5 text-[var(--text-title)]' : 'text-[var(--text-muted)] cursor-not-allowed'}`}
@@ -289,7 +300,7 @@ export default function VideoMode() {
               >
                 <Trash2 className="w-4 h-4" strokeWidth={2} />
               </button>
-              <button 
+              <button
                 onClick={handleSplit}
                 disabled={!hasSelectedClip}
                 className={`p-1.5 rounded transition-colors ${hasSelectedClip ? 'hover:bg-black/5 text-[var(--text-title)]' : 'text-[var(--text-muted)] cursor-not-allowed'}`}
@@ -297,7 +308,7 @@ export default function VideoMode() {
               >
                 <Scissors className="w-4 h-4" strokeWidth={2} />
               </button>
-              <button 
+              <button
                 onClick={handleCopy}
                 disabled={!hasSelectedClip}
                 className={`p-1.5 rounded transition-colors ${hasSelectedClip ? 'hover:bg-black/5 text-[var(--text-title)]' : 'text-[var(--text-muted)] cursor-not-allowed'}`}
@@ -306,16 +317,16 @@ export default function VideoMode() {
                 <Copy className="w-4 h-4" strokeWidth={2} />
               </button>
             </div>
-            
+
             <div className="flex items-center gap-2">
-              <button 
+              <button
                 onClick={handleSkipToStart}
                 className="p-1.5 rounded hover:bg-black/5 transition-colors"
                 title="跳转到开头"
               >
                 <SkipBack className="w-4 h-4" strokeWidth={2} />
               </button>
-              <button 
+              <button
                 onClick={() => setIsPlaying(!isPlaying)}
                 className="w-7 h-7 rounded-full bg-[var(--text-title)] text-white flex items-center justify-center hover:brightness-95 transition-all"
               >
@@ -325,7 +336,7 @@ export default function VideoMode() {
                   <Play className="w-3.5 h-3.5 ml-0.5" fill="currentColor" />
                 )}
               </button>
-              <button 
+              <button
                 onClick={handleSkipToEnd}
                 className="p-1.5 rounded hover:bg-black/5 transition-colors"
                 title="跳转到结尾"
@@ -333,7 +344,7 @@ export default function VideoMode() {
                 <SkipForward className="w-4 h-4" strokeWidth={2} />
               </button>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <span className="text-[12px] font-mono text-[var(--text-muted)]">
                 {formatTime(currentTime)} / {formatTime(duration)}
@@ -351,14 +362,19 @@ export default function VideoMode() {
           </div>
         </div>
 
-        {/* Properties Panel */}
-        <div 
-          className="w-[240px] flex-shrink-0 border-l border-[var(--border-default)] overflow-auto"
-          style={{ background: 'var(--bg-panel)' }}
+        {/* PropertiesPanel — matches design 9C9vi */}
+        <div
+          className="flex-shrink-0 overflow-auto"
+          style={{
+            width: 240,
+            background: '#FAFAF9',
+            borderLeft: '1px solid #E8E8E8',
+            padding: '20px 16px'
+          }}
         >
-          <div className="p-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <h3 className="text-[13px] font-semibold text-[var(--text-title)] mb-4">属性</h3>
-            
+
             {/* Selected Clip Info */}
             {selectedClip && (
               <div className="mb-6 p-3 bg-[var(--bg-canvas)] rounded-lg">
@@ -395,7 +411,7 @@ export default function VideoMode() {
                 })()}
               </div>
             )}
-            
+
             {/* Subtitle Style */}
             <div className="mb-6">
               <h4 className="text-[10px] font-medium text-[var(--text-light)] uppercase tracking-wide mb-3">
@@ -420,8 +436,8 @@ export default function VideoMode() {
                 </div>
                 <div>
                   <label className="text-[11px] text-[var(--text-muted)] block mb-1">大小</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     defaultValue={60}
                     className="w-full px-2 py-1.5 rounded border border-[var(--border-input)] text-[12px]"
                   />
@@ -463,16 +479,16 @@ export default function VideoMode() {
       </div>
 
       {/* Timeline */}
-      <div 
-        className="h-[140px] border-t border-[var(--border-default)] flex flex-col"
-        style={{ background: 'var(--bg-toolbar)' }}
+      <div
+        className="h-[140px] flex flex-col"
+        style={{ background: '#FAFAF9', borderTop: '1px solid #E8E8E8' }}
       >
         {/* Time Ruler */}
         <div className="h-6 flex items-center px-4 border-b border-[var(--border-default)]">
           <div className="flex-1 relative">
             {[0, 2, 4, 6, 8, 10, 12, 14].map((s) => (
-              <span 
-                key={s} 
+              <span
+                key={s}
                 className="absolute text-[10px] text-[var(--text-light)]"
                 style={{ left: `${(s / 14) * 100}%` }}
               >
@@ -495,8 +511,8 @@ export default function VideoMode() {
                   className={`
                     absolute h-full rounded flex items-center px-2 text-[10px] text-white cursor-pointer
                     transition-all duration-150
-                    ${selectedClip?.id === clip.id && selectedClip?.type === 'video' 
-                      ? 'ring-2 ring-white ring-offset-1 ring-offset-[var(--bg-canvas)] brightness-110' 
+                    ${selectedClip?.id === clip.id && selectedClip?.type === 'video'
+                      ? 'ring-2 ring-white ring-offset-1 ring-offset-[var(--bg-canvas)] brightness-110'
                       : 'hover:brightness-110'
                     }
                   `}
@@ -523,8 +539,8 @@ export default function VideoMode() {
                   className={`
                     absolute h-full rounded flex items-center px-2 text-[10px] text-white cursor-pointer
                     transition-all duration-150
-                    ${selectedClip?.id === clip.id && selectedClip?.type === 'subtitle' 
-                      ? 'ring-2 ring-white ring-offset-1 ring-offset-[var(--bg-canvas)] brightness-110' 
+                    ${selectedClip?.id === clip.id && selectedClip?.type === 'subtitle'
+                      ? 'ring-2 ring-white ring-offset-1 ring-offset-[var(--bg-canvas)] brightness-110'
                       : 'hover:brightness-110'
                     }
                   `}
@@ -544,7 +560,7 @@ export default function VideoMode() {
           <div className="flex items-center px-4 py-1">
             <span className="w-8 text-[9px] text-[var(--text-muted)]">♫ 音频</span>
             <div className="flex-1 h-6 relative bg-[var(--bg-canvas)] rounded overflow-hidden">
-              <div 
+              <div
                 className="absolute inset-0 flex items-center justify-center text-[var(--color-purple)]"
                 style={{ opacity: 0.3 }}
               >

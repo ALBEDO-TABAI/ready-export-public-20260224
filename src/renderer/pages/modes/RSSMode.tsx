@@ -65,10 +65,10 @@ export default function RSSMode() {
         // Mock data for development
         setIsMock(true)
         setItems([
-          { 
-            id: '1', 
-            sourceId: '1', 
-            title: 'AI 创作工具的下一个十年', 
+          {
+            id: '1',
+            sourceId: '1',
+            title: 'AI 创作工具的下一个十年',
             link: 'https://36kr.com/p/123456',
             summary: '探讨 AI 如何改变内容创作行业...',
             source: '36氪',
@@ -76,10 +76,10 @@ export default function RSSMode() {
             read: false,
             starred: false
           },
-          { 
-            id: '2', 
-            sourceId: '2', 
-            title: '自媒体运营的核心方法论', 
+          {
+            id: '2',
+            sourceId: '2',
+            title: '自媒体运营的核心方法论',
             link: 'https://www.huxiu.com/article/789',
             summary: '从 0 到 1 打造个人 IP 的实战经验...',
             source: '虎嗅',
@@ -139,11 +139,16 @@ export default function RSSMode() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Filter Bar */}
-      <div 
-        className="h-[44px] flex items-center justify-between px-4 border-b border-[var(--border-default)]"
-        style={{ background: 'var(--bg-toolbar)' }}
+    <div className="flex flex-col h-full" style={{ background: 'var(--bg-content)' }}>
+      {/* Filter Bar — matches design RSSContent header */}
+      <div
+        className="flex items-center justify-between"
+        style={{
+          height: 38,
+          padding: '0 16px',
+          background: '#FAFAF9',
+          borderBottom: '1px solid var(--border-default)'
+        }}
       >
         <div className="flex items-center gap-4">
           <h2 className="text-[13px] font-semibold text-[var(--text-title)]">RSS 订阅源</h2>
@@ -156,10 +161,10 @@ export default function RSSMode() {
             </span>
           )}
         </div>
-        
+
         <div className="flex items-center gap-2">
           {/* Source Filter */}
-          <select 
+          <select
             value={selectedSource || ''}
             onChange={(e) => setSelectedSource(e.target.value || null)}
             className="px-3 py-1.5 rounded-lg border border-[var(--border-input)] text-[12px] bg-[var(--bg-primary)]"
@@ -192,7 +197,7 @@ export default function RSSMode() {
             </button>
           </div>
 
-          <button 
+          <button
             onClick={loadRSSData}
             className="p-1.5 rounded hover:bg-black/5 transition-colors"
           >
@@ -204,10 +209,9 @@ export default function RSSMode() {
       {/* Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* RSS List */}
-        <div 
-          className={`flex-shrink-0 overflow-auto border-r border-[var(--border-default)] transition-all duration-300 ${
-            selectedItem ? 'w-[300px] opacity-50' : 'flex-1'
-          }`}
+        <div
+          className={`flex-shrink-0 overflow-auto border-r border-[var(--border-default)] transition-all duration-300 ${selectedItem ? 'w-[300px] opacity-50' : 'flex-1'
+            }`}
           style={{ background: 'var(--bg-content)' }}
         >
           <div className="divide-y divide-[var(--border-default)]">
@@ -221,9 +225,8 @@ export default function RSSMode() {
                 <button
                   key={item.id}
                   onClick={() => handleItemClick(item)}
-                  className={`w-full text-left p-4 hover:bg-black/[0.02] transition-colors ${
-                    selectedItem?.id === item.id ? 'bg-[var(--color-blue-light)] border-l-2 border-[var(--color-blue)]' : ''
-                  } ${!item.read ? 'bg-[var(--bg-primary)]' : ''}`}
+                  className={`w-full text-left p-4 hover:bg-black/[0.02] transition-colors ${selectedItem?.id === item.id ? 'bg-[var(--color-blue-light)] border-l-2 border-[var(--color-blue)]' : ''
+                    } ${!item.read ? 'bg-[var(--bg-primary)]' : ''}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
@@ -248,14 +251,19 @@ export default function RSSMode() {
 
         {/* Preview Browser */}
         {selectedItem && (
-          <div className="flex-1 flex flex-col" style={{ background: 'var(--bg-content)' }}>
+          <div className="flex-1 flex flex-col" style={{ background: '#FFFFFF' }}>
             {/* Browser Toolbar */}
-            <div 
-              className="h-[38px] flex items-center justify-between px-3 border-b border-[var(--border-default)]"
-              style={{ background: 'var(--bg-toolbar)' }}
+            <div
+              className="flex items-center justify-between"
+              style={{
+                height: 38,
+                padding: '0 12px',
+                background: '#FAFAF9',
+                borderBottom: '1px solid var(--border-default)'
+              }}
             >
               <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={() => setSelectedItem(null)}
                   className="p-1.5 rounded hover:bg-black/5 transition-colors"
                 >
@@ -266,7 +274,7 @@ export default function RSSMode() {
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <button 
+                <button
                   onClick={loadRSSData}
                   className="p-1.5 rounded hover:bg-black/5 transition-colors"
                 >
@@ -284,7 +292,7 @@ export default function RSSMode() {
                 <ExternalLink className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p className="text-[14px] font-medium mb-1">{selectedItem.title}</p>
                 <p className="text-[12px] max-w-[400px] mx-auto mb-4">{selectedItem.summary}</p>
-                <a 
+                <a
                   href={selectedItem.link}
                   target="_blank"
                   rel="noopener noreferrer"

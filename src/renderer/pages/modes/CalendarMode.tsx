@@ -47,7 +47,7 @@ export default function CalendarMode() {
     try {
       const start = startOfWeek(currentDate, { weekStartsOn: 0 })
       const end = addDays(start, 6)
-      
+
       if (typeof window !== 'undefined' && window.electronAPI) {
         const result = await window.electronAPI.calendar.getEvents(start, end)
         if (result.success && result.data) {
@@ -133,242 +133,243 @@ export default function CalendarMode() {
           </span>
         </div>
       )}
-      
+
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <div 
-          className="w-[220px] flex-shrink-0 border-r border-[var(--border-default)] overflow-auto"
-          style={{ background: 'var(--bg-panel)' }}
+        {/* CalendarSidebar — matches design ATmhz */}
+        <div
+          className="flex-shrink-0 overflow-auto flex flex-col"
+          style={{
+            width: 220,
+            background: '#F8F7F4',
+            padding: '12px 14px',
+            borderRight: '1px solid var(--border-default)'
+          }}
         >
-          {/* Mini Calendar */}
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[13px] font-semibold">
-                {format(currentDate, 'yyyy年 M月', { locale: zhCN })}
-              </span>
-              <div className="flex items-center gap-1">
-                <button 
-                  onClick={() => setCurrentDate(addDays(currentDate, -30))}
-                  className="p-1 rounded hover:bg-black/5"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => setCurrentDate(addDays(currentDate, 30))}
-                  className="p-1 rounded hover:bg-black/5"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            
-            {/* Weekday Headers */}
-            <div className="grid grid-cols-7 gap-1 mb-1">
-              {['日', '一', '二', '三', '四', '五', '六'].map(d => (
-                <div key={d} className="text-center text-[10px] text-[var(--text-light)] py-1">
-                  {d}
-                </div>
-              ))}
-            </div>
-            
-            {/* Days Grid */}
-            <div className="grid grid-cols-7 gap-1">
-              {monthDays.map((day, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSelectedDate(day)}
-                  className={`
-                    aspect-square flex items-center justify-center text-[11px] rounded-lg
-                    transition-colors
-                    ${isToday(day) ? 'bg-[var(--color-red)] text-white font-semibold' : 'hover:bg-black/5'}
-                    ${selectedDate && isSameDay(day, selectedDate) ? 'ring-2 ring-[var(--color-blue)]' : ''}
-                  `}
-                >
-                  {format(day, 'd')}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="h-px bg-[var(--border-default)] mx-4" />
-
-          {/* Calendar Sources */}
-          <div className="p-4">
-            <h3 className="text-[12px] font-semibold text-[var(--text-title)] mb-3">日历源</h3>
-            <div className="space-y-2">
-              {sources.map(source => (
-                <label 
-                  key={source.id}
-                  className="flex items-center gap-2 cursor-pointer hover:bg-black/5 p-1.5 rounded transition-colors"
-                >
-                  <input 
-                    type="checkbox"
-                    checked={source.enabled}
-                    onChange={() => toggleSource(source.id)}
-                    className="w-4 h-4 rounded border-[var(--border-input)]"
-                  />
-                  <span 
-                    className="w-3 h-3 rounded-full"
-                    style={{ background: source.color }}
-                  />
-                  <span className="text-[12px] text-[var(--text-body)]">{source.name}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Add Account Button */}
-          <div className="px-4 pb-4">
-            <button className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-[var(--border-default)] text-[12px] text-[var(--text-muted)] hover:bg-black/5 transition-colors">
-              <Plus className="w-4 h-4" />
-              添加日历帐号
-            </button>
-          </div>
-        </div>
-
-        {/* Main Calendar */}
-        <div className="flex-1 flex flex-col" style={{ background: 'var(--bg-content)' }}>
-          {/* Navigation Bar */}
-          <div 
-            className="h-[44px] flex items-center justify-between px-4 border-b border-[var(--border-default)]"
-            style={{ background: 'var(--bg-toolbar)' }}
-          >
-            <div className="flex items-center gap-4">
-              <h2 className="text-[15px] font-semibold">
-                {format(currentDate, 'MMMM yyyy', { locale: zhCN })}
-              </h2>
-              <div className="flex items-center gap-1">
-                <button 
-                  onClick={() => setCurrentDate(addDays(currentDate, -7))}
-                  className="p-1.5 rounded hover:bg-black/5 transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => setCurrentDate(new Date())}
-                  className="px-3 py-1 rounded-lg border border-[var(--border-default)] text-[12px] hover:bg-black/5 transition-colors"
-                >
-                  今天
-                </button>
-                <button 
-                  onClick={() => setCurrentDate(addDays(currentDate, 7))}
-                  className="p-1.5 rounded hover:bg-black/5 transition-colors"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button className="px-3 py-1.5 rounded-lg bg-[var(--color-blue)] text-white text-[12px] hover:brightness-95 transition-all">
-                周
+          {/* MiniCalNav */}
+          <div className="flex items-center justify-between" style={{ height: 28 }}>
+            <span className="text-[13px] font-semibold">
+              {format(currentDate, 'yyyy年 M月', { locale: zhCN })}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentDate(addDays(currentDate, -30))}
+                className="p-1 rounded hover:bg-black/5"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setCurrentDate(addDays(currentDate, 30))}
+                className="p-1 rounded hover:bg-black/5"
+              >
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* Day Headers */}
-          <div className="flex border-b border-[var(--border-default)]">
-            <div className="w-14 flex-shrink-0 border-r border-[var(--border-default)]" />
-            {weekDays.map((day, i) => (
-              <div 
-                key={i}
-                className={`flex-1 py-2 text-center border-r border-[var(--border-default)] last:border-r-0 ${
-                  isToday(day) ? 'bg-[var(--color-red)]/5' : ''
-                }`}
-              >
-                <div className={`text-[11px] ${isToday(day) ? 'text-[var(--color-red)] font-medium' : 'text-[var(--text-muted)]'}`}>
-                  {['周日', '周一', '周二', '周三', '周四', '周五', '周六'][i]}
-                </div>
-                <div className={`text-[14px] font-semibold mt-0.5 ${
-                  isToday(day) ? 'text-[var(--color-red)]' : 'text-[var(--text-title)]'
-                }`}>
-                  {format(day, 'd')}
-                  {isToday(day) && (
-                    <span className="ml-1 text-[10px]">今天</span>
-                  )}
-                </div>
-              </div>
+          {/* MiniWeekHeader — matches design UjbCD */}
+          <div
+            className="flex items-center justify-between"
+            style={{ height: 22, padding: '0 2px' }}
+          >
+            {['周日', '周一', '周二', '周三', '周四', '周五', '周六'].map(d => (
+              <span key={d} style={{ fontSize: 10, fontWeight: 500, color: '#AAAAAA', textAlign: 'center', flex: 1 }}>
+                {d}
+              </span>
             ))}
           </div>
 
-          {/* Time Grid */}
-          <div className="flex-1 overflow-auto relative">
-            <div className="flex min-h-full relative">
-              {/* Time Labels */}
-              <div className="w-14 flex-shrink-0 border-r border-[var(--border-default)] bg-[var(--bg-toolbar)]">
-                {HOURS.map(hour => (
-                  <div 
-                    key={hour}
-                    className="h-[60px] flex items-start justify-center pt-1 border-b border-[var(--border-default)]"
-                  >
-                    <span className="text-[10px] text-[var(--text-light)]">
-                      {hour <= 12 ? `${hour} AM` : `${hour - 12} PM`}
-                    </span>
-                  </div>
-                ))}
+          {/* Days Grid — matches design CalRow */}
+          <div className="grid grid-cols-7" style={{ gap: 2 }}>
+            {monthDays.map((day, i) => (
+              <button
+                key={i}
+                onClick={() => setSelectedDate(day)}
+                className="flex items-center justify-center transition-colors"
+                style={{
+                  height: 22,
+                  borderRadius: isToday(day) ? 11 : 4,
+                  background: isToday(day) ? '#EB5757' : 'transparent',
+                  color: isToday(day) ? '#FFFFFF' : '#333333',
+                  fontSize: 11, fontWeight: 500
+                }}
+              >
+                {format(day, 'd')}
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* calDiv — matches design 9qjPC */}
+        <div style={{ height: 0, borderTop: '1px solid var(--border-default)', margin: '4px 0' }} />
+
+        {/* CalendarSources — matches design AqRYQ */}
+        <div style={{ gap: 6, display: 'flex', flexDirection: 'column', padding: '8px 0' }}>
+          <span style={{ fontSize: 11, fontWeight: 500, color: '#7A7A7A' }}>我的日历</span>
+          <div className="flex flex-col" style={{ gap: 6 }}>
+            {sources.map(source => (
+              <label
+                key={source.id}
+                className="flex items-center cursor-pointer hover:bg-black/5 rounded transition-colors"
+                style={{ gap: 8, height: 22 }}
+              >
+                <span
+                  className="rounded-full"
+                  style={{ width: 8, height: 8, background: source.color }}
+                />
+                <span style={{ fontSize: 11, color: '#333333' }}>{source.name}</span>
+              </label>
+            ))}
+          </div>
+          {/* AddCalBtn — matches design VarwJ */}
+          <div className="flex items-center" style={{ gap: 6, height: 22 }}>
+            <Plus style={{ width: 12, height: 12 }} className="text-[#5B8DEF]" strokeWidth={2} />
+            <span style={{ fontSize: 11, color: '#5B8DEF' }}>添加日历帐号</span>
+          </div>
+        </div>
+      </div>
+
+      {/* WeekViewContent — matches design RwVvL */}
+      <div className="flex-1 flex flex-col" style={{ background: '#FFFFFF' }}>
+        {/* CalNavBar — matches design Mpwlb */}
+        <div
+          className="flex items-center justify-between"
+          style={{
+            height: 48,
+            padding: '0 20px',
+            borderBottom: '1px solid #E8E8E8'
+          }}
+        >
+          <div className="flex items-center gap-4">
+            <h2 className="text-[15px] font-semibold">
+              {format(currentDate, 'MMMM yyyy', { locale: zhCN })}
+            </h2>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentDate(addDays(currentDate, -7))}
+                className="p-1.5 rounded hover:bg-black/5 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setCurrentDate(new Date())}
+                className="px-3 py-1 rounded-lg border border-[var(--border-default)] text-[12px] hover:bg-black/5 transition-colors"
+              >
+                今天
+              </button>
+              <button
+                onClick={() => setCurrentDate(addDays(currentDate, 7))}
+                className="p-1.5 rounded hover:bg-black/5 transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="px-3 py-1.5 rounded-lg bg-[var(--color-blue)] text-white text-[12px] hover:brightness-95 transition-all">
+              周
+            </button>
+          </div>
+        </div>
+
+        {/* DayHeaderRow — matches design Svgez */}
+        <div className="flex" style={{ borderBottom: '1px solid #E8E8E8' }}>
+          <div style={{ width: 50, flexShrink: 0 }} />
+          {weekDays.map((day, i) => (
+            <div
+              key={i}
+              className={`flex-1 py-2 text-center border-r border-[var(--border-default)] last:border-r-0 ${isToday(day) ? 'bg-[var(--color-red)]/5' : ''
+                }`}
+            >
+              <div className={`text-[11px] ${isToday(day) ? 'text-[var(--color-red)] font-medium' : 'text-[var(--text-muted)]'}`}>
+                {['周日', '周一', '周二', '周三', '周四', '周五', '周六'][i]}
               </div>
+              <div className={`text-[14px] font-semibold mt-0.5 ${isToday(day) ? 'text-[var(--color-red)]' : 'text-[var(--text-title)]'
+                }`}>
+                {format(day, 'd')}
+                {isToday(day) && (
+                  <span className="ml-1 text-[10px]">今天</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
 
-              {/* Day Columns */}
-              {weekDays.map((day, dayIndex) => (
-                <div 
-                  key={dayIndex}
-                  className={`flex-1 border-r border-[var(--border-default)] last:border-r-0 relative ${
-                    isToday(day) ? 'bg-[var(--color-blue)]/[0.02]' : ''
-                  }`}
+        {/* TimeGrid — matches design 0eMGQ */}
+        <div className="flex-1 overflow-auto relative" style={{ background: '#FFFFFF' }}>
+          <div className="flex min-h-full relative">
+            {/* Time Labels */}
+            <div style={{ width: 50, flexShrink: 0, background: '#FAFAF9' }}>
+              {HOURS.map(hour => (
+                <div
+                  key={hour}
+                  className="h-[60px] flex items-start justify-center pt-1 border-b border-[var(--border-default)]"
                 >
-                  {/* Hour Grid Lines */}
-                  {HOURS.map(hour => (
-                    <div 
-                      key={hour}
-                      className="h-[60px] border-b border-[var(--border-default)]"
-                    />
-                  ))}
-
-                  {/* Current Time Line - Only show in today's column */}
-                  {isToday(day) && currentTimePosition !== null && (
-                    <div 
-                      className="absolute left-0 right-0 flex items-center z-20 pointer-events-none"
-                      style={{ top: `${currentTimePosition}px` }}
-                    >
-                      <div className="w-2 h-2 rounded-full bg-[var(--color-red)] -ml-1" />
-                      <div className="flex-1 h-px bg-[var(--color-red)]" />
-                      <span className="text-[10px] text-[var(--color-red)] ml-1 mr-1 bg-white/80 px-1 rounded">
-                        {format(currentTime, 'HH:mm')}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Events */}
-                  {getEventsForDay(day).map(event => (
-                    <div
-                      key={event.id}
-                      className="absolute left-1 right-1 rounded-lg px-2.5 py-1.5 text-[11px] cursor-pointer 
-                        hover:shadow-md hover:scale-[1.02] transition-all duration-200 ease-out
-                        backdrop-blur-sm"
-                      style={{
-                        top: `${(event.startTime.getHours() - 8) * HOUR_HEIGHT + (event.startTime.getMinutes() / 60) * HOUR_HEIGHT}px`,
-                        height: `${Math.max(
-                          ((event.endTime.getTime() - event.startTime.getTime()) / 60000 / 60) * HOUR_HEIGHT,
-                          24
-                        )}px`,
-                        background: `${event.color}15`,
-                        borderLeft: `3px solid ${event.color}`,
-                        borderTop: `1px solid ${event.color}30`,
-                        borderRight: `1px solid ${event.color}30`,
-                        borderBottom: `1px solid ${event.color}30`,
-                        color: event.color,
-                        boxShadow: `0 1px 3px ${event.color}20`
-                      }}
-                    >
-                      <div className="font-semibold truncate leading-tight">{event.title}</div>
-                      <div className="text-[10px] opacity-80 mt-0.5 flex items-center gap-1">
-                        <span className="w-1 h-1 rounded-full bg-current" />
-                        {format(event.startTime, 'HH:mm')} - {format(event.endTime, 'HH:mm')}
-                      </div>
-                    </div>
-                  ))}
+                  <span className="text-[10px] text-[var(--text-light)]">
+                    {hour <= 12 ? `${hour} AM` : `${hour - 12} PM`}
+                  </span>
                 </div>
               ))}
             </div>
+
+            {/* Day Columns */}
+            {weekDays.map((day, dayIndex) => (
+              <div
+                key={dayIndex}
+                className={`flex-1 border-r border-[var(--border-default)] last:border-r-0 relative ${isToday(day) ? 'bg-[var(--color-blue)]/[0.02]' : ''
+                  }`}
+              >
+                {/* Hour Grid Lines */}
+                {HOURS.map(hour => (
+                  <div
+                    key={hour}
+                    className="h-[60px] border-b border-[var(--border-default)]"
+                  />
+                ))}
+
+                {/* Current Time Line - Only show in today's column */}
+                {isToday(day) && currentTimePosition !== null && (
+                  <div
+                    className="absolute left-0 right-0 flex items-center z-20 pointer-events-none"
+                    style={{ top: `${currentTimePosition}px` }}
+                  >
+                    <div className="w-2 h-2 rounded-full bg-[var(--color-red)] -ml-1" />
+                    <div className="flex-1 h-px bg-[var(--color-red)]" />
+                    <span className="text-[10px] text-[var(--color-red)] ml-1 mr-1 bg-white/80 px-1 rounded">
+                      {format(currentTime, 'HH:mm')}
+                    </span>
+                  </div>
+                )}
+
+                {/* Events */}
+                {getEventsForDay(day).map(event => (
+                  <div
+                    key={event.id}
+                    className="absolute left-1 right-1 rounded-lg px-2.5 py-1.5 text-[11px] cursor-pointer 
+                        hover:shadow-md hover:scale-[1.02] transition-all duration-200 ease-out
+                        backdrop-blur-sm"
+                    style={{
+                      top: `${(event.startTime.getHours() - 8) * HOUR_HEIGHT + (event.startTime.getMinutes() / 60) * HOUR_HEIGHT}px`,
+                      height: `${Math.max(
+                        ((event.endTime.getTime() - event.startTime.getTime()) / 60000 / 60) * HOUR_HEIGHT,
+                        24
+                      )}px`,
+                      background: `${event.color}15`,
+                      borderLeft: `3px solid ${event.color}`,
+                      borderTop: `1px solid ${event.color}30`,
+                      borderRight: `1px solid ${event.color}30`,
+                      borderBottom: `1px solid ${event.color}30`,
+                      color: event.color,
+                      boxShadow: `0 1px 3px ${event.color}20`
+                    }}
+                  >
+                    <div className="font-semibold truncate leading-tight">{event.title}</div>
+                    <div className="text-[10px] opacity-80 mt-0.5 flex items-center gap-1">
+                      <span className="w-1 h-1 rounded-full bg-current" />
+                      {format(event.startTime, 'HH:mm')} - {format(event.endTime, 'HH:mm')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         </div>
       </div>
