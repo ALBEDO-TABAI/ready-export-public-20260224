@@ -66,8 +66,8 @@ export function setupBrowserIPC(mainWindow: BrowserWindow, useMock = false): voi
           type: 'navigate',
           tabId,
           url: newUrl,
-          canGoBack: view.webContents.canGoBack(),
-          canGoForward: view.webContents.canGoForward(),
+          canGoBack: view.webContents.navigationHistory.canGoBack(),
+          canGoForward: view.webContents.navigationHistory.canGoForward(),
         })
       })
 
@@ -77,8 +77,8 @@ export function setupBrowserIPC(mainWindow: BrowserWindow, useMock = false): voi
           type: 'navigate',
           tabId,
           url: newUrl,
-          canGoBack: view.webContents.canGoBack(),
-          canGoForward: view.webContents.canGoForward(),
+          canGoBack: view.webContents.navigationHistory.canGoBack(),
+          canGoForward: view.webContents.navigationHistory.canGoForward(),
         })
       })
 
@@ -179,8 +179,8 @@ export function setupBrowserIPC(mainWindow: BrowserWindow, useMock = false): voi
         success: true,
         url: newTab.url,
         title: newTab.title,
-        canGoBack: newTab.view.webContents.canGoBack(),
-        canGoForward: newTab.view.webContents.canGoForward(),
+        canGoBack: newTab.view.webContents.navigationHistory.canGoBack(),
+        canGoForward: newTab.view.webContents.navigationHistory.canGoForward(),
       }
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : String(error) }
@@ -204,8 +204,8 @@ export function setupBrowserIPC(mainWindow: BrowserWindow, useMock = false): voi
     try {
       const tab = tabs.get(tabId)
       if (!tab?.view) return { success: false, error: 'Tab not found' }
-      if (tab.view.webContents.canGoBack()) {
-        tab.view.webContents.goBack()
+      if (tab.view.webContents.navigationHistory.canGoBack()) {
+        tab.view.webContents.navigationHistory.goBack()
       }
       return { success: true }
     } catch (error) {
@@ -218,8 +218,8 @@ export function setupBrowserIPC(mainWindow: BrowserWindow, useMock = false): voi
     try {
       const tab = tabs.get(tabId)
       if (!tab?.view) return { success: false, error: 'Tab not found' }
-      if (tab.view.webContents.canGoForward()) {
-        tab.view.webContents.goForward()
+      if (tab.view.webContents.navigationHistory.canGoForward()) {
+        tab.view.webContents.navigationHistory.goForward()
       }
       return { success: true }
     } catch (error) {
