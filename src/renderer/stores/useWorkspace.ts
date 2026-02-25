@@ -15,6 +15,7 @@ interface WorkspaceState {
   files: FileItem[]
   selectedFile: string | null
   expandedDirs: Set<string>
+  dirChildren: Map<string, FileItem[]>
   sidebarVisible: boolean
   sidebarWidth: number
   chatPanelVisible: boolean
@@ -29,7 +30,8 @@ interface WorkspaceState {
   toggleSidebar: () => void
   toggleChatPanel: () => void
   refreshFiles: () => Promise<void>
-  toggleDir: (path: string) => void
+  toggleDir: (path: string) => Promise<void>
+  loadDirChildren: (path: string) => Promise<FileItem[]>
 
   // Workspace
   setWorkspaceRoot: (path: string) => void
@@ -62,6 +64,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   files: [],
   selectedFile: null,
   expandedDirs: new Set<string>(),
+  dirChildren: new Map<string, FileItem[]>(),
   sidebarVisible: true,
   sidebarWidth: 220,
   chatPanelVisible: true,
@@ -82,15 +85,49 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
 
   toggleChatPanel: () => set((state) => ({ chatPanelVisible: !state.chatPanelVisible })),
 
-  toggleDir: (path) => set((state) => {
-    const next = new Set(state.expandedDirs)
+  loadDirChildren: async (dirPath) => {
+    try {
+      if (typeof window !== 'undefined' && window.electronAPI) {
+        const result = await window.electronAPI.document.listFiles(dirPath)
+        if (result.success && result.items) {
+          const items = result.items
+            .map((item: { modified: string | number | Date }) => ({
+              ...item,
+              modified: new Date(item.modified)
+            }))
+            .sort((a: FileItem, b: FileItem) => {
+              if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1
+              return a.name.localeCompare(b.name)
+            })
+          set((state) => {
+            const next = new Map(state.dirChildren)
+            next.set(dirPath, items)
+            return { dirChildren: next }
+          })
+          return items
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load dir children:', dirPath, error)
+    }
+    return []
+  },
+
+  toggleDir: async (path) => {
+    const { expandedDirs, dirChildren, loadDirChildren } = get()
+    const next = new Set(expandedDirs)
     if (next.has(path)) {
       next.delete(path)
+      set({ expandedDirs: next })
     } else {
       next.add(path)
+      set({ expandedDirs: next })
+      // Lazy load children if not cached
+      if (!dirChildren.has(path)) {
+        await loadDirChildren(path)
+      }
     }
-    return { expandedDirs: next }
-  }),
+  },
 
   setWorkspaceRoot: (path) => {
     set({ workspaceRoot: path, currentPath: path })

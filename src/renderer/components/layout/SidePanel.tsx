@@ -145,6 +145,106 @@ function FileTreeItem({
   )
 }
 
+// --- Allowed file extensions ---
+const ALLOWED_EXTENSIONS = new Set([
+  // 文档
+  'md', 'txt', 'pdf', 'docx', 'doc', 'rtf', 'odt',
+  // 代码
+  'ts', 'tsx', 'js', 'jsx', 'json', 'html', 'css', 'scss', 'less',
+  'py', 'go', 'rs', 'java', 'kt', 'swift', 'c', 'cpp', 'h',
+  'yaml', 'yml', 'toml', 'xml', 'sql', 'sh', 'bash', 'zsh',
+  'vue', 'svelte', 'astro', 'env', 'gitignore',
+  // 网页
+  'htm', 'svg',
+  // 图片
+  'png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'ico', 'tiff',
+  // 视频
+  'mp4', 'mov', 'mkv', 'avi', 'webm', 'flv', 'wmv',
+  // 音频
+  'mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a',
+  // 表格
+  'xlsx', 'xls', 'csv', 'tsv',
+  // 配置
+  'ini', 'cfg', 'conf', 'properties', 'plist',
+  // 其他
+  'log', 'lock',
+])
+
+function isFileAllowed(item: FileItem): boolean {
+  if (item.isDirectory) return true
+  // Files without extension are allowed (Makefile, Dockerfile, etc.)
+  const ext = item.name.split('.').pop()?.toLowerCase()
+  if (!ext || ext === item.name.toLowerCase()) return true
+  return ALLOWED_EXTENSIONS.has(ext)
+}
+
+// --- Recursive file tree ---
+function FileTreeRecursive({
+  items,
+  depth,
+  selectedFile,
+  expandedDirs,
+  dirChildren,
+  renamingPath,
+  onToggleDir,
+  onOpenFile,
+  onContextMenu,
+  onRenameConfirm,
+  onRenameCancel
+}: {
+  items: FileItem[]
+  depth: number
+  selectedFile: string | null
+  expandedDirs: Set<string>
+  dirChildren: Map<string, FileItem[]>
+  renamingPath: string | null
+  onToggleDir: (path: string) => Promise<void>
+  onOpenFile: (item: FileItem) => void
+  onContextMenu: (e: React.MouseEvent, item: FileItem) => void
+  onRenameConfirm: (path: string, newName: string) => void
+  onRenameCancel: () => void
+}) {
+  return (
+    <>
+      {items.filter(isFileAllowed).map((item) => {
+        const isExpanded = expandedDirs.has(item.path)
+        const children = dirChildren.get(item.path) || []
+        return (
+          <div key={item.path}>
+            <FileTreeItem
+              item={item}
+              isActive={selectedFile === item.path}
+              isExpanded={isExpanded}
+              isRenaming={renamingPath === item.path}
+              depth={depth}
+              onToggleDir={() => onToggleDir(item.path)}
+              onOpenFile={() => onOpenFile(item)}
+              onContextMenu={(e) => onContextMenu(e, item)}
+              onRenameConfirm={(newName) => onRenameConfirm(item.path, newName)}
+              onRenameCancel={onRenameCancel}
+            />
+            {item.isDirectory && isExpanded && children.length > 0 && (
+              <FileTreeRecursive
+                items={children}
+                depth={depth + 1}
+                selectedFile={selectedFile}
+                expandedDirs={expandedDirs}
+                dirChildren={dirChildren}
+                renamingPath={renamingPath}
+                onToggleDir={onToggleDir}
+                onOpenFile={onOpenFile}
+                onContextMenu={onContextMenu}
+                onRenameConfirm={onRenameConfirm}
+                onRenameCancel={onRenameCancel}
+              />
+            )}
+          </div>
+        )
+      })}
+    </>
+  )
+}
+
 // --- Main SidePanel ---
 export default function SidePanel() {
   const [query, setQuery] = useState('')
@@ -158,6 +258,7 @@ export default function SidePanel() {
     workspaceRoot,
     selectedFile,
     expandedDirs,
+    dirChildren,
     renamingPath,
     creatingType,
     setCurrentPath,
@@ -188,9 +289,12 @@ export default function SidePanel() {
   }, [currentPath, workspaceRoot])
 
   const filteredFiles = useMemo(() => {
+    let result = files.filter(isFileAllowed)
     const keyword = query.trim().toLowerCase()
-    if (!keyword) return files
-    return files.filter((file) => file.name.toLowerCase().includes(keyword))
+    if (keyword) {
+      result = result.filter((file) => file.name.toLowerCase().includes(keyword))
+    }
+    return result
   }, [files, query])
 
   // File opener that switches mode based on extension
@@ -383,30 +487,23 @@ export default function SidePanel() {
             <span className="text-[11px]">{files.length === 0 ? '暂无文件' : '未找到匹配文件'}</span>
           </div>
         ) : (
-          filteredFiles.map((file) => (
-            <FileTreeItem
-              key={file.path}
-              item={file}
-              isActive={file.isDirectory ? currentPath === file.path : selectedFile === file.path}
-              isExpanded={expandedDirs.has(file.path)}
-              isRenaming={renamingPath === file.path}
-              depth={0}
-              onToggleDir={() => {
-                if (file.isDirectory) {
-                  selectFile(null)
-                  setCurrentPath(file.path)
-                }
-              }}
-              onOpenFile={() => handleOpenFile(file)}
-              onContextMenu={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                setContextMenu({ x: e.clientX, y: e.clientY, item: file })
-              }}
-              onRenameConfirm={(newName) => renameItem(file.path, newName)}
-              onRenameCancel={cancelRenaming}
-            />
-          ))
+          <FileTreeRecursive
+            items={filteredFiles}
+            depth={0}
+            selectedFile={selectedFile}
+            expandedDirs={expandedDirs}
+            dirChildren={dirChildren}
+            renamingPath={renamingPath}
+            onToggleDir={toggleDir}
+            onOpenFile={handleOpenFile}
+            onContextMenu={(e, item) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setContextMenu({ x: e.clientX, y: e.clientY, item })
+            }}
+            onRenameConfirm={(path, newName) => renameItem(path, newName)}
+            onRenameCancel={cancelRenaming}
+          />
         )}
       </div>
 
