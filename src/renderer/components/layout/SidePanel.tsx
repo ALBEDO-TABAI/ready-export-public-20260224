@@ -2,7 +2,8 @@ import { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import {
   ArrowLeft, RefreshCw, ChevronRight, ChevronDown, Search,
   FileText, Folder, FolderOpen, Image, Film, FileSpreadsheet,
-  FilePlus, FolderPlus, FolderOpen as FolderOpenIcon, PanelLeftClose
+  FilePlus, FolderPlus, FolderOpen as FolderOpenIcon, PanelLeftClose,
+  MoreVertical
 } from 'lucide-react'
 import { useWorkspace, type FileItem } from '../../stores/useWorkspace'
 import { useMode, type WorkbenchMode } from '../../stores/useMode'
@@ -250,6 +251,8 @@ export default function SidePanel() {
   const [query, setQuery] = useState('')
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: FileItem | null } | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
+  const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false)
+  const workspaceMenuRef = useRef<HTMLDivElement>(null)
   const {
     files,
     sidebarVisible,
@@ -276,7 +279,11 @@ export default function SidePanel() {
     startRenaming,
     cancelRenaming,
     startCreating,
-    cancelCreating
+    cancelCreating,
+    clearWorkspace,
+    saveWorkspace,
+    getSavedWorkspaces,
+    loadSavedWorkspace,
   } = useWorkspace()
 
   const { setWorkbenchMode } = useMode()
@@ -472,13 +479,79 @@ export default function SidePanel() {
           >
             <FolderPlus className="w-3.5 h-3.5" />
           </button>
-          <button
-            onClick={openFolderDialog}
-            title="打开文件夹"
-            className="p-1 rounded hover:bg-black/5 text-[var(--text-gray)]"
-          >
-            <FolderOpenIcon className="w-3.5 h-3.5" />
-          </button>
+
+          {/* Workspace menu */}
+          <div className="relative" ref={workspaceMenuRef}>
+            <button
+              onClick={() => setShowWorkspaceMenu(v => !v)}
+              title="工作区操作"
+              className="p-1 rounded hover:bg-black/5 text-[var(--text-gray)]"
+            >
+              <MoreVertical className="w-3.5 h-3.5" />
+            </button>
+
+            {showWorkspaceMenu && (
+              <div
+                className="absolute right-0 top-full mt-1 z-50 min-w-[180px] rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] shadow-lg py-1"
+                onClick={() => setShowWorkspaceMenu(false)}
+              >
+                <button
+                  onClick={() => {
+                    if (!workspaceRoot || confirm('确定新建工作区？当前文件列表将被清空。')) {
+                      clearWorkspace()
+                    }
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-[12px] hover:bg-black/5 flex items-center gap-2"
+                >
+                  <FilePlus className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                  新建工作区
+                </button>
+                <button
+                  onClick={() => {
+                    if (!workspaceRoot) return alert('当前没有打开的工作区')
+                    const name = prompt('工作区名称：', workspaceRoot.split('/').pop() || '我的工作区')
+                    if (name) {
+                      saveWorkspace(name)
+                      alert(`工作区 "${name}" 已保存`)
+                    }
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-[12px] hover:bg-black/5 flex items-center gap-2"
+                >
+                  <Folder className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                  保存工作区
+                </button>
+
+                {/* Separator */}
+                <div className="border-t border-[var(--border-default)] my-1" />
+
+                {/* Saved workspaces */}
+                {getSavedWorkspaces().length > 0 && (
+                  <>
+                    <div className="px-3 py-1 text-[10px] text-[var(--text-light)] font-medium">已保存的工作区</div>
+                    {getSavedWorkspaces().map(w => (
+                      <button
+                        key={w.name}
+                        onClick={() => loadSavedWorkspace(w.root)}
+                        className="w-full text-left px-3 py-1.5 text-[12px] hover:bg-black/5 flex items-center gap-2 group"
+                      >
+                        <FolderOpen className="w-3.5 h-3.5 text-[var(--color-blue)]" />
+                        <span className="flex-1 truncate">{w.name}</span>
+                      </button>
+                    ))}
+                    <div className="border-t border-[var(--border-default)] my-1" />
+                  </>
+                )}
+
+                <button
+                  onClick={openFolderDialog}
+                  className="w-full text-left px-3 py-1.5 text-[12px] hover:bg-black/5 flex items-center gap-2"
+                >
+                  <FolderOpenIcon className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                  打开文件夹...
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

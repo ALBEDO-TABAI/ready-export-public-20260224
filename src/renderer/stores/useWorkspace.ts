@@ -35,7 +35,12 @@ interface WorkspaceState {
 
   // Workspace
   setWorkspaceRoot: (path: string) => void
+  clearWorkspace: () => void
   openFolderDialog: () => Promise<void>
+  saveWorkspace: (name: string) => void
+  getSavedWorkspaces: () => { name: string; root: string }[]
+  loadSavedWorkspace: (root: string) => void
+  deleteSavedWorkspace: (name: string) => void
 
   // File operations
   createFile: (name: string) => Promise<boolean>
@@ -130,9 +135,47 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   },
 
   setWorkspaceRoot: (path) => {
-    set({ workspaceRoot: path, currentPath: path })
+    set({ workspaceRoot: path, currentPath: path, expandedDirs: new Set(), dirChildren: new Map(), selectedFile: null })
     localStorage.setItem('ready-workspace-root', path)
     get().refreshFiles()
+  },
+
+  clearWorkspace: () => {
+    set({
+      workspaceRoot: null,
+      currentPath: '/',
+      files: [],
+      selectedFile: null,
+      expandedDirs: new Set(),
+      dirChildren: new Map(),
+      renamingPath: null,
+      creatingType: null,
+    })
+    localStorage.removeItem('ready-workspace-root')
+  },
+
+  saveWorkspace: (name) => {
+    const { workspaceRoot } = get()
+    if (!workspaceRoot) return
+    const saved = JSON.parse(localStorage.getItem('ready-saved-workspaces') || '[]') as { name: string; root: string }[]
+    // Avoid duplicates
+    const filtered = saved.filter(w => w.name !== name)
+    filtered.push({ name, root: workspaceRoot })
+    localStorage.setItem('ready-saved-workspaces', JSON.stringify(filtered))
+  },
+
+  getSavedWorkspaces: () => {
+    return JSON.parse(localStorage.getItem('ready-saved-workspaces') || '[]') as { name: string; root: string }[]
+  },
+
+  loadSavedWorkspace: (root) => {
+    get().setWorkspaceRoot(root)
+  },
+
+  deleteSavedWorkspace: (name) => {
+    const saved = JSON.parse(localStorage.getItem('ready-saved-workspaces') || '[]') as { name: string; root: string }[]
+    const filtered = saved.filter(w => w.name !== name)
+    localStorage.setItem('ready-saved-workspaces', JSON.stringify(filtered))
   },
 
   openFolderDialog: async () => {
