@@ -148,13 +148,12 @@ export default function BrowserMode() {
   const sendBounds = useCallback(() => {
     if (!isElectron || !contentRef.current) return
     const rect = contentRef.current.getBoundingClientRect()
-    // Account for Electron title bar and device pixel ratio
-    const dpr = window.devicePixelRatio || 1
+    // setBounds() uses CSS pixels, no need to multiply by devicePixelRatio
     window.electronAPI.browser.updateBounds({
-      x: Math.round(rect.left * dpr),
-      y: Math.round(rect.top * dpr),
-      width: Math.round(rect.width * dpr),
-      height: Math.round(rect.height * dpr),
+      x: Math.round(rect.left),
+      y: Math.round(rect.top),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
     })
   }, [isElectron])
 
@@ -197,7 +196,7 @@ export default function BrowserMode() {
           break
       }
     })
-    return cleanup
+    return () => { cleanup() }
   }, [isElectron, updateTab])
 
   // On mount: create initial tab & show BrowserView
