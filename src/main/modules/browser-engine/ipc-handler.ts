@@ -11,88 +11,105 @@ export function setupBrowserIPC(mainWindow: BrowserWindow, useMock = false): voi
   const tabs = new Map<string, Tab>()
   let activeTabId: string | null = null
   let tabCounter = 0
+  // Store the last known bounds for BrowserView positioning
+  let viewBounds = { x: 0, y: 0, width: 800, height: 600 }
+
+  const sendToRenderer = (channel: string, data: unknown): void => {
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.webContents.send(channel, data)
+    }
+  }
+
+  const applyBounds = (view: BrowserView): void => {
+    view.setBounds(viewBounds)
+  }
 
   // Create new tab
   ipcMain.handle('browser:createTab', async (_, url: string) => {
     try {
       if (useMock) {
-        // Mock mode: just return success without creating BrowserView
         const tabId = `tab-${++tabCounter}`
-        const tab: Tab = {
-          id: tabId,
-          url,
-          title: 'Mock Tab'
-        }
+        const tab: Tab = { id: tabId, url, title: 'Mock Tab' }
         tabs.set(tabId, tab)
         activeTabId = tabId
         return { success: true, tabId, title: tab.title, mock: true }
       }
 
       const tabId = `tab-${++tabCounter}`
-      
-      // Create BrowserView
+
       const view = new BrowserView({
         webPreferences: {
           nodeIntegration: false,
-          contextIsolation: true
+          contextIsolation: true,
         }
       })
 
-      // Set bounds (will be updated when tab becomes active)
-      const bounds = mainWindow.getBounds()
-      view.setBounds({ x: 0, y: 80, width: bounds.width - 600, height: bounds.height - 80 })
+      applyBounds(view)
 
-      // Load URL
-      await view.webContents.loadURL(url)
-
-      const tab: Tab = {
-        id: tabId,
-        url,
-        title: 'Loading...',
-        view
-      }
-
+      const tab: Tab = { id: tabId, url, title: 'Loading...', view }
       tabs.set(tabId, tab)
 
-      // Update title when page loads
+      // -- Events --
       view.webContents.on('page-title-updated', (_, title) => {
         tab.title = title
-        if (!mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('browser:tabUpdate', { 
-            type: 'title', 
-            tabId, 
-            title 
-          })
-        }
+        sendToRenderer('browser:tabUpdate', { type: 'title', tabId, title })
       })
 
-      // Update URL on navigation
       view.webContents.on('did-navigate', (_, newUrl) => {
         tab.url = newUrl
-        if (!mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('browser:tabUpdate', { 
-            type: 'url', 
-            tabId, 
-            url: newUrl 
-          })
-        }
+        sendToRenderer('browser:tabUpdate', {
+          type: 'navigate',
+          tabId,
+          url: newUrl,
+          canGoBack: view.webContents.canGoBack(),
+          canGoForward: view.webContents.canGoForward(),
+        })
       })
 
-      // Switch to new tab
+      view.webContents.on('did-navigate-in-page', (_, newUrl) => {
+        tab.url = newUrl
+        sendToRenderer('browser:tabUpdate', {
+          type: 'navigate',
+          tabId,
+          url: newUrl,
+          canGoBack: view.webContents.canGoBack(),
+          canGoForward: view.webContents.canGoForward(),
+        })
+      })
+
+      view.webContents.on('did-start-loading', () => {
+        sendToRenderer('browser:tabUpdate', { type: 'loading', tabId, loading: true })
+      })
+
+      view.webContents.on('did-stop-loading', () => {
+        sendToRenderer('browser:tabUpdate', { type: 'loading', tabId, loading: false })
+      })
+
+      view.webContents.on('did-fail-load', (_, errorCode, errorDescription) => {
+        sendToRenderer('browser:tabUpdate', {
+          type: 'error',
+          tabId,
+          error: `${errorDescription} (${errorCode})`,
+        })
+      })
+
+      // Hide old active view, show new one
       if (activeTabId) {
         const oldTab = tabs.get(activeTabId)
         if (oldTab?.view) {
           mainWindow.removeBrowserView(oldTab.view)
         }
       }
-      
+
       mainWindow.addBrowserView(view)
       activeTabId = tabId
 
+      // Load URL after setup
+      await view.webContents.loadURL(url)
+
       return { success: true, tabId, title: tab.title }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return { success: false, error: errorMessage }
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
     }
   })
 
@@ -106,13 +123,13 @@ export function setupBrowserIPC(mainWindow: BrowserWindow, useMock = false): voi
       }
       tabs.delete(tabId)
 
-      // Switch to another tab if this was active
       if (activeTabId === tabId) {
-        const remainingTabs = Array.from(tabs.values())
-        if (remainingTabs.length > 0) {
-          const newTab = remainingTabs[remainingTabs.length - 1]
+        const remaining = Array.from(tabs.values())
+        if (remaining.length > 0) {
+          const newTab = remaining[remaining.length - 1]
           if (newTab.view) {
             mainWindow.addBrowserView(newTab.view)
+            applyBounds(newTab.view)
             activeTabId = newTab.id
           }
         } else {
@@ -122,8 +139,7 @@ export function setupBrowserIPC(mainWindow: BrowserWindow, useMock = false): voi
 
       return { success: true }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return { success: false, error: errorMessage }
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
     }
   })
 
@@ -131,26 +147,26 @@ export function setupBrowserIPC(mainWindow: BrowserWindow, useMock = false): voi
   ipcMain.handle('browser:switchTab', (_, tabId: string) => {
     try {
       const newTab = tabs.get(tabId)
-      if (!newTab?.view) {
-        return { success: false, error: 'Tab not found' }
-      }
+      if (!newTab?.view) return { success: false, error: 'Tab not found' }
 
-      // Remove current tab view
       if (activeTabId) {
         const oldTab = tabs.get(activeTabId)
-        if (oldTab?.view) {
-          mainWindow.removeBrowserView(oldTab.view)
-        }
+        if (oldTab?.view) mainWindow.removeBrowserView(oldTab.view)
       }
 
-      // Add new tab view
       mainWindow.addBrowserView(newTab.view)
+      applyBounds(newTab.view)
       activeTabId = tabId
 
-      return { success: true }
+      return {
+        success: true,
+        url: newTab.url,
+        title: newTab.title,
+        canGoBack: newTab.view.webContents.canGoBack(),
+        canGoForward: newTab.view.webContents.canGoForward(),
+      }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return { success: false, error: errorMessage }
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
     }
   })
 
@@ -158,16 +174,87 @@ export function setupBrowserIPC(mainWindow: BrowserWindow, useMock = false): voi
   ipcMain.handle('browser:navigate', async (_, { tabId, url }: { tabId: string; url: string }) => {
     try {
       const tab = tabs.get(tabId)
-      if (!tab?.view) {
-        return { success: false, error: 'Tab not found' }
-      }
-
+      if (!tab?.view) return { success: false, error: 'Tab not found' }
       await tab.view.webContents.loadURL(url)
       return { success: true }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      return { success: false, error: errorMessage }
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
     }
+  })
+
+  // Go back
+  ipcMain.handle('browser:goBack', (_, tabId: string) => {
+    try {
+      const tab = tabs.get(tabId)
+      if (!tab?.view) return { success: false, error: 'Tab not found' }
+      if (tab.view.webContents.canGoBack()) {
+        tab.view.webContents.goBack()
+      }
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  })
+
+  // Go forward
+  ipcMain.handle('browser:goForward', (_, tabId: string) => {
+    try {
+      const tab = tabs.get(tabId)
+      if (!tab?.view) return { success: false, error: 'Tab not found' }
+      if (tab.view.webContents.canGoForward()) {
+        tab.view.webContents.goForward()
+      }
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  })
+
+  // Reload
+  ipcMain.handle('browser:reload', (_, tabId: string) => {
+    try {
+      const tab = tabs.get(tabId)
+      if (!tab?.view) return { success: false, error: 'Tab not found' }
+      tab.view.webContents.reload()
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  })
+
+  // Update bounds — called from renderer when layout changes
+  ipcMain.handle('browser:updateBounds', (_, bounds: { x: number; y: number; width: number; height: number }) => {
+    viewBounds = bounds
+    if (activeTabId) {
+      const tab = tabs.get(activeTabId)
+      if (tab?.view) {
+        applyBounds(tab.view)
+      }
+    }
+    return { success: true }
+  })
+
+  // Hide all BrowserViews — called when switching away from browser mode
+  ipcMain.handle('browser:hideAll', () => {
+    if (activeTabId) {
+      const tab = tabs.get(activeTabId)
+      if (tab?.view) {
+        mainWindow.removeBrowserView(tab.view)
+      }
+    }
+    return { success: true }
+  })
+
+  // Show active BrowserView — called when switching back to browser mode
+  ipcMain.handle('browser:showActive', () => {
+    if (activeTabId) {
+      const tab = tabs.get(activeTabId)
+      if (tab?.view) {
+        mainWindow.addBrowserView(tab.view)
+        applyBounds(tab.view)
+      }
+    }
+    return { success: true }
   })
 
   // Get all tabs
@@ -180,18 +267,12 @@ export function setupBrowserIPC(mainWindow: BrowserWindow, useMock = false): voi
     }))
   })
 
-  // Update view bounds when window resizes
+  // Update view bounds on window resize
   mainWindow.on('resize', () => {
     if (activeTabId) {
       const tab = tabs.get(activeTabId)
       if (tab?.view) {
-        const bounds = mainWindow.getBounds()
-        tab.view.setBounds({ 
-          x: 264, 
-          y: 80, 
-          width: bounds.width - 644, 
-          height: bounds.height - 80 
-        })
+        applyBounds(tab.view)
       }
     }
   })

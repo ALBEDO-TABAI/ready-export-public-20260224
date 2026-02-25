@@ -29,6 +29,14 @@ const browserAPI = {
   closeTab: (tabId: string) => ipcRenderer.invoke('browser:closeTab', tabId),
   switchTab: (tabId: string) => ipcRenderer.invoke('browser:switchTab', tabId),
   navigate: (tabId: string, url: string) => ipcRenderer.invoke('browser:navigate', { tabId, url }),
+  goBack: (tabId: string) => ipcRenderer.invoke('browser:goBack', tabId),
+  goForward: (tabId: string) => ipcRenderer.invoke('browser:goForward', tabId),
+  reload: (tabId: string) => ipcRenderer.invoke('browser:reload', tabId),
+  updateBounds: (bounds: { x: number; y: number; width: number; height: number }) =>
+    ipcRenderer.invoke('browser:updateBounds', bounds),
+  hideAll: () => ipcRenderer.invoke('browser:hideAll'),
+  showActive: () => ipcRenderer.invoke('browser:showActive'),
+  getTabs: () => ipcRenderer.invoke('browser:getTabs'),
   onTabUpdate: (callback: (data: unknown) => void) => {
     ipcRenderer.on('browser:tabUpdate', (_, data) => callback(data))
     return () => ipcRenderer.removeAllListeners('browser:tabUpdate')

@@ -17,6 +17,13 @@ interface ElectronBrowserAPI {
   closeTab: (tabId: string) => Promise<unknown>
   switchTab: (tabId: string) => Promise<unknown>
   navigate: (tabId: string, url: string) => Promise<unknown>
+  goBack: (tabId: string) => Promise<unknown>
+  goForward: (tabId: string) => Promise<unknown>
+  reload: (tabId: string) => Promise<unknown>
+  updateBounds: (bounds: { x: number; y: number; width: number; height: number }) => Promise<unknown>
+  hideAll: () => Promise<unknown>
+  showActive: () => Promise<unknown>
+  getTabs: () => Promise<unknown>
   onTabUpdate: (callback: (data: unknown) => void) => () => void
 }
 
