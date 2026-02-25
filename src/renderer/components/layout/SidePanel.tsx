@@ -373,29 +373,45 @@ export default function SidePanel() {
     e.stopPropagation()
     setIsDragOver(false)
 
-    const targetDir = currentPath || workspaceRoot
-    if (!targetDir) return
-
     const droppedFiles = e.dataTransfer.files
     if (!droppedFiles || droppedFiles.length === 0) return
 
     if (typeof window !== 'undefined' && window.electronAPI) {
+      // Collect all dropped paths
+      const droppedPaths: string[] = []
       for (let i = 0; i < droppedFiles.length; i++) {
-        const file = droppedFiles[i]
-        // Use Electron's webUtils.getPathForFile via preload
-        const srcPath = window.electronAPI.getFilePathFromDrop(file)
-        if (!srcPath) continue
-        const fileName = srcPath.split('/').pop() || file.name
-        const destPath = `${targetDir}/${fileName}`
-        try {
-          await window.electronAPI.document.copyItem(srcPath, destPath)
-        } catch (err) {
-          console.warn('Failed to copy:', srcPath, err)
-        }
+        const p = window.electronAPI.getFilePathFromDrop(droppedFiles[i])
+        if (p) droppedPaths.push(p)
       }
-      await refreshFiles()
+      if (droppedPaths.length === 0) return
+
+      // Check if any dropped item is a directory (via stat)
+      // For simplicity: use the parent directory of all dropped paths as the new root
+      // This way each dropped folder/file appears as an entry in the file tree
+      const parents = droppedPaths.map(p => {
+        const idx = p.lastIndexOf('/')
+        return idx > 0 ? p.slice(0, idx) : '/'
+      })
+
+      // Find the common parent of all dropped items
+      const commonParent = parents.reduce((common, parent) => {
+        if (!common) return parent
+        // Find common prefix
+        const parts1 = common.split('/')
+        const parts2 = parent.split('/')
+        const shared: string[] = []
+        for (let i = 0; i < Math.min(parts1.length, parts2.length); i++) {
+          if (parts1[i] === parts2[i]) shared.push(parts1[i])
+          else break
+        }
+        return shared.join('/') || '/'
+      }, '')
+
+      // Set workspace root to the common parent so all dropped items appear as entries
+      const { setWorkspaceRoot: setRoot } = useWorkspace.getState()
+      setRoot(commonParent)
     }
-  }, [currentPath, workspaceRoot, refreshFiles])
+  }, [])
 
   const displayPath = currentPath === workspaceRoot
     ? currentPath.split('/').pop() || currentPath
