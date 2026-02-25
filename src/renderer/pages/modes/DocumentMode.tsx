@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import {
   Bold, Italic, Underline, Strikethrough, Link, Code,
   List, ListOrdered, CheckSquare, Quote, Save, Loader2,
-  Eye, Edit3, Columns, X, Plus, FileText, GripVertical
+  Eye, Edit3, Columns, X, Plus, FileText, GripVertical,
+  ImageIcon, Film, ZoomIn, ZoomOut, RotateCw
 } from 'lucide-react'
 import { useWorkspace } from '../../stores/useWorkspace'
 import { useDocTabs, type DocTab } from '../../stores/useDocTabs'
@@ -118,8 +119,13 @@ function DocumentEditor({ tab }: { tab: DocTab }) {
 
   const currentExt = useMemo(() => getFileExt(tab.path), [tab.path])
   const isMarkdown = ['md', 'txt', 'json', 'ts', 'tsx', 'js', 'css', 'html', ''].includes(currentExt)
+  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(currentExt)
+  const isVideo = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'ogg'].includes(currentExt)
+  const isMedia = isImage || isVideo
   const canSave = isMarkdown && !!tab.path
   const renderedHtml = useMemo(() => renderMarkdown(tab.content), [tab.content])
+  const [imageZoom, setImageZoom] = useState(100)
+  const fileUrl = tab.path ? `file://${tab.path}` : ''
 
   // Load file content on mount / path change
   useEffect(() => {
@@ -154,6 +160,10 @@ function DocumentEditor({ tab }: { tab: DocTab }) {
             updateTabContent(tab.id, formatXlsxPreview(result.data))
             setViewMode('preview')
           }
+        } else if (isImage || isVideo) {
+          // Image/video files don't need content loading, rendered directly via file:// URL
+          if (!cancelled) setIsLoading(false)
+          return
         } else {
           if (!cancelled) updateTabContent(tab.id, `# 暂不支持该格式\n\n文件: ${tab.path}`)
         }
@@ -301,7 +311,78 @@ function DocumentEditor({ tab }: { tab: DocTab }) {
 
       {/* Content area */}
       <div className="flex-1 overflow-hidden flex" style={{ background: '#FFFFFF' }}>
-        {isMarkdown ? (
+        {isImage && tab.path ? (
+          /* Image preview */
+          <div className="flex-1 flex flex-col overflow-auto" style={{ background: '#F5F5F4' }}>
+            {/* Image toolbar */}
+            <div className="flex items-center justify-center gap-2 py-2 border-b border-[var(--border-default)]" style={{ background: '#FAFAF9' }}>
+              <button
+                onClick={() => setImageZoom(z => Math.max(10, z - 25))}
+                className="p-1 rounded hover:bg-black/5 transition-colors"
+                title="缩小"
+              >
+                <ZoomOut className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+              </button>
+              <span className="text-[11px] text-[var(--text-muted)] min-w-[40px] text-center">{imageZoom}%</span>
+              <button
+                onClick={() => setImageZoom(z => Math.min(400, z + 25))}
+                className="p-1 rounded hover:bg-black/5 transition-colors"
+                title="放大"
+              >
+                <ZoomIn className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+              </button>
+              <button
+                onClick={() => setImageZoom(100)}
+                className="p-1 rounded hover:bg-black/5 transition-colors"
+                title="重置"
+              >
+                <RotateCw className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+              </button>
+              <div className="w-px h-4 bg-[var(--border-default)] mx-1" />
+              <span className="text-[11px] text-[var(--text-muted)]">{tab.title}</span>
+            </div>
+            {/* Image display */}
+            <div className="flex-1 flex items-center justify-center p-6 overflow-auto">
+              <img
+                src={fileUrl}
+                alt={tab.title}
+                style={{
+                  maxWidth: imageZoom === 100 ? '100%' : 'none',
+                  maxHeight: imageZoom === 100 ? '100%' : 'none',
+                  width: imageZoom !== 100 ? `${imageZoom}%` : undefined,
+                  objectFit: 'contain',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                }}
+              />
+            </div>
+          </div>
+        ) : isVideo && tab.path ? (
+          /* Video player */
+          <div className="flex-1 flex flex-col" style={{ background: '#1a1a1a' }}>
+            <div className="flex-1 flex items-center justify-center p-6">
+              <video
+                src={fileUrl}
+                controls
+                className="max-w-full max-h-full rounded-lg"
+                style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.3)' }}
+              >
+                您的浏览器不支持视频播放
+              </video>
+            </div>
+            {/* Video info bar */}
+            <div
+              className="flex items-center justify-between px-4 py-2 text-[11px]"
+              style={{ background: '#222', color: '#999' }}
+            >
+              <div className="flex items-center gap-2">
+                <Film className="w-3.5 h-3.5" />
+                <span>{tab.title}</span>
+              </div>
+              <span className="uppercase">{currentExt}</span>
+            </div>
+          </div>
+        ) : isMarkdown ? (
           <>
             {(viewMode === 'edit' || viewMode === 'split') && (
               <div className={`${viewMode === 'split' ? 'w-1/2 border-r border-[var(--border-default)]' : 'flex-1'} overflow-auto`}>
