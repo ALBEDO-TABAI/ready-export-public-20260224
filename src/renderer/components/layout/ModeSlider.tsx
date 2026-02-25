@@ -31,16 +31,14 @@ export default function ModeSlider() {
 
       {/* Labels */}
       <span
-        className={`absolute left-2 text-[10px] font-medium transition-opacity duration-200 ${appMode === 'workbench' ? 'opacity-100' : 'opacity-0'
-          }`}
-        style={{ color: 'var(--text-gray)' }}
+        className={`absolute left-2 transition-opacity duration-200 ${appMode === 'workbench' ? 'opacity-100' : 'opacity-0'}`}
+        style={{ fontSize: 11, fontWeight: 600, color: '#3D3D3D' }}
       >
         工作台
       </span>
       <span
-        className={`absolute right-2 text-[10px] font-medium transition-opacity duration-200 ${appMode === 'ready' ? 'opacity-100' : 'opacity-0'
-          }`}
-        style={{ color: 'var(--color-green)' }}
+        className={`absolute right-2 transition-opacity duration-200 ${appMode === 'ready' ? 'opacity-100' : 'opacity-0'}`}
+        style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-green)' }}
       >
         Ready
       </span>

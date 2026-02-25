@@ -1,6 +1,6 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import {
-  ArrowLeft, RefreshCw, ChevronRight, ChevronDown,
+  ArrowLeft, RefreshCw, ChevronRight, ChevronDown, Search,
   FileText, Folder, FolderOpen, Image, Film, FileSpreadsheet,
   FilePlus, FolderPlus, FolderOpen as FolderOpenIcon
 } from 'lucide-react'
@@ -104,11 +104,11 @@ function FileTreeItem({
       onClick={() => item.isDirectory ? onToggleDir() : onOpenFile()}
       onContextMenu={onContextMenu}
       className={`
-        flex items-center gap-1 px-1 py-[3px] rounded-md text-[12px] cursor-pointer
+        flex items-center gap-2 rounded-lg text-[12px] cursor-pointer
         transition-colors duration-150 group
-        ${isActive ? 'bg-[var(--color-blue-light)] text-[var(--color-blue)]' : 'hover:bg-black/5'}
+        ${isActive ? 'bg-[#E8E8E8] dark:bg-[#333538]' : 'hover:bg-black/5'}
       `}
-      style={{ paddingLeft: `${8 + depth * 16}px` }}
+      style={{ padding: '6px 8px', paddingLeft: `${8 + depth * 16}px` }}
     >
       {/* Chevron for directories */}
       {item.isDirectory ? (
@@ -265,16 +265,24 @@ export default function SidePanel({ width = 220 }: SidePanelProps) {
       }}
     >
       {/* Header */}
-      <div className="h-[38px] flex items-center justify-between px-3 border-b border-[var(--border-default)]">
+      <div className="flex items-center justify-between" style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-default)' }}>
         <div className="flex items-center gap-1.5">
           <span className="text-[13px] font-semibold text-[var(--text-title)]">文件管理</span>
-          {!(typeof window !== 'undefined' && window.electronAPI) && (
+          {!(typeof window !== 'undefined' && window.electronAPI) ? (
             <span
-              className="px-1.5 py-0.5 rounded text-[9px] font-medium"
-              style={{ background: 'var(--color-orange-light)', color: 'var(--color-orange)' }}
-              title="浏览器预览模式下显示模拟文件。在 Electron 环境中可浏览真实文件。"
+              className="flex items-center gap-1 rounded-[10px] text-[10px] font-medium"
+              style={{ padding: '3px 8px', background: 'var(--color-orange-light)', color: 'var(--color-orange)' }}
+              title="浏览器预览模式下显示模拟文件"
             >
               预览
+            </span>
+          ) : (
+            <span
+              className="flex items-center gap-1 rounded-[10px] text-[10px] font-medium"
+              style={{ padding: '3px 8px', background: 'var(--color-green-light)', color: 'var(--color-green)' }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-green)]" />
+              已连接
             </span>
           )}
         </div>
@@ -303,8 +311,8 @@ export default function SidePanel({ width = 220 }: SidePanelProps) {
         </div>
       </div>
 
-      {/* Breadcrumb / Path bar */}
-      <div className="px-2 pt-2">
+      {/* Search */}
+      <div style={{ padding: '10px 14px' }}>
         <div className="flex items-center gap-1 mb-2">
           <button
             onClick={() => parentPath && setCurrentPath(parentPath)}
@@ -322,24 +330,27 @@ export default function SidePanel({ width = 220 }: SidePanelProps) {
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
           <div
-            className="flex-1 truncate text-[11px] text-[var(--text-muted)] rounded px-2 py-1 border border-[var(--border-default)]"
-            style={{ background: 'var(--bg-primary)' }}
+            className="flex-1 truncate text-[11px] text-[var(--text-muted)] rounded-[10px] px-2.5 py-1"
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-input)' }}
             title={currentPath}
           >
             {displayPath}
           </div>
         </div>
 
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="搜索文件..."
-          className="w-full px-3 py-1.5 rounded-[10px] text-[12px] border border-[var(--border-input)]
-            placeholder:text-[var(--text-placeholder)]
-            focus:outline-none focus:border-[var(--color-blue)] focus:ring-1 focus:ring-[var(--color-blue)]"
-          style={{ background: 'var(--bg-primary)' }}
-        />
+        <div
+          className="flex items-center gap-[6px] rounded-[10px]"
+          style={{ padding: '6px 10px', border: '1px solid var(--border-input)' }}
+        >
+          <Search className="w-3 h-3 text-[var(--text-light)] flex-shrink-0" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="搜索文件..."
+            className="flex-1 bg-transparent border-none outline-none text-[12px] text-[var(--text-body)] placeholder:text-[var(--text-placeholder)]"
+          />
+        </div>
       </div>
 
       {/* File List */}
