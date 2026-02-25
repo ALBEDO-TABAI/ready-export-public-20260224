@@ -244,8 +244,6 @@ export default function SidePanel({ width = 220 }: SidePanelProps) {
     ]
   }, [handleOpenFile, startRenaming, copyPathToClipboard, startCreating, showInFolder, deleteItem, refreshFiles])
 
-  if (!sidebarVisible) return null
-
   // Show "Open Folder" prompt when no workspace root
   if (!workspaceRoot && !(typeof window !== 'undefined' && window.electronAPI)) {
     // In browser preview, just show mock files
@@ -257,8 +255,14 @@ export default function SidePanel({ width = 220 }: SidePanelProps) {
 
   return (
     <div
-      className="flex-shrink-0 border-r border-[var(--border-default)] flex flex-col select-none"
-      style={{ width, background: 'var(--bg-panel)' }}
+      className="flex-shrink-0 border-r border-[var(--border-default)] flex flex-col select-none overflow-hidden"
+      style={{
+        width: sidebarVisible ? width : 0,
+        minWidth: sidebarVisible ? width : 0,
+        background: 'var(--bg-panel)',
+        transition: 'width 0.2s ease, min-width 0.2s ease',
+        borderRightWidth: sidebarVisible ? 1 : 0,
+      }}
       onContextMenu={(e) => {
         e.preventDefault()
         setContextMenu({ x: e.clientX, y: e.clientY, item: null })

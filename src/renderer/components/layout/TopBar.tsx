@@ -20,17 +20,17 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
 
   return (
     <div
-      className="h-[38px] flex items-center justify-between"
+      className="h-[38px] flex items-center justify-between drag-region"
       style={{
         background: 'var(--bg-panel)',
         paddingLeft: 72,
         paddingRight: 12,
         boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
-        borderBottom: '1px solid var(--border-default)'
+        borderBottom: '1px solid var(--border-default)',
       }}
     >
       {/* Left: Mode Slider + Mode Tabs */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 no-drag">
         <ModeSlider />
 
         {appMode === 'workbench' && (
@@ -73,7 +73,7 @@ export default function TopBar({ onToggleSidebar }: TopBarProps) {
       </div>
 
       {/* Right: Search + User + Toggle */}
-      <div className="flex items-center gap-[10px]">
+      <div className="flex items-center gap-[10px] no-drag">
         <button className="p-1.5 rounded-lg hover:bg-black/5 transition-colors">
           <Search style={{ width: 15, height: 15 }} className="text-[#6A6A6A]" strokeWidth={2} />
         </button>
