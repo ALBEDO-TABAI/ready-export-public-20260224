@@ -18,7 +18,11 @@ import { setupCalendarIPC } from './modules/calendar-engine/ipc-handler'
 import { DatabaseManager } from './modules/database'
 
 // Environment configuration
-const ENABLE_MOCK_SERVICES = process.env.ENABLE_MOCK_SERVICES === 'true'
+// In production, default to mock mode since real services are not fully ready yet.
+// In development, control via ENABLE_MOCK_SERVICES env variable.
+const ENABLE_MOCK_SERVICES = is.dev
+  ? process.env.ENABLE_MOCK_SERVICES === 'true'
+  : process.env.ENABLE_MOCK_SERVICES !== 'false' // default true in production
 
 // Initialize database
 const db = new DatabaseManager()
