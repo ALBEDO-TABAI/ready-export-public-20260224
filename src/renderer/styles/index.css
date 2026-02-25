@@ -2,7 +2,7 @@
 
 /* Custom CSS Variables */
 :root {
-  /* Colors from UI-SPEC-V5.md */
+  /* Colors from UI-SPEC-V5.md — Light Mode */
   --bg-primary: #FFFFFF;
   --bg-panel: #F6F5F1;
   --bg-content: #FDFCFA;
@@ -18,7 +18,7 @@
   --text-gray: #8A8A8A;
   --text-light: #999999;
   --text-placeholder: #AAAAAA;
-  
+
   /* Semantic colors */
   --color-blue: #5B8DEF;
   --color-blue-light: rgba(91, 141, 239, 0.1);
@@ -33,6 +33,37 @@
   --color-gold: #C9A962;
 }
 
+/* Dark Mode */
+html[data-theme='dark'] {
+  --bg-primary: #1A1B1E;
+  --bg-panel: #202124;
+  --bg-content: #1E1F22;
+  --bg-editor: #232427;
+  --bg-toolbar: #2A2B2E;
+  --bg-canvas: #171819;
+  --border-default: #333538;
+  --border-input: #444648;
+  --text-title: #E8E8E8;
+  --text-body: #CCCCCC;
+  --text-secondary: #B0B0B0;
+  --text-muted: #8A8A8A;
+  --text-gray: #6A6A6A;
+  --text-light: #555555;
+  --text-placeholder: #555555;
+
+  --color-blue: #6B9BFF;
+  --color-blue-light: rgba(107, 155, 255, 0.15);
+  --color-green: #3EE8A8;
+  --color-green-light: rgba(62, 232, 168, 0.15);
+  --color-orange: #F08A3B;
+  --color-orange-light: rgba(240, 138, 59, 0.15);
+  --color-purple: #9B6CFF;
+  --color-purple-light: rgba(155, 108, 255, 0.15);
+  --color-red: #F06060;
+  --color-red-light: rgba(240, 96, 96, 0.15);
+  --color-gold: #D9B972;
+}
+
 /* Base styles */
 * {
   margin: 0;
@@ -40,7 +71,9 @@
   box-sizing: border-box;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   width: 100%;
   overflow: hidden;
@@ -109,13 +142,25 @@ body {
 
 /* Animation */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideIn {
-  from { transform: translateX(-10px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(-10px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .animate-fadeIn {

@@ -279,7 +279,7 @@ export default function DocumentMode() {
           <button
             onClick={handleSave}
             disabled={!canSave || isLoading || saveState === 'saving'}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[12px] border border-[var(--border-default)] bg-white hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[12px] border border-[var(--border-default)] bg-[var(--bg-primary)] hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saveState === 'saving' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
             <span>保存</span>

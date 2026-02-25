@@ -162,7 +162,7 @@ export default function RSSMode() {
           <select 
             value={selectedSource || ''}
             onChange={(e) => setSelectedSource(e.target.value || null)}
-            className="px-3 py-1.5 rounded-lg border border-[var(--border-input)] text-[12px] bg-white"
+            className="px-3 py-1.5 rounded-lg border border-[var(--border-input)] text-[12px] bg-[var(--bg-primary)]"
           >
             <option value="">全部源</option>
             {sources.map(source => (
@@ -171,7 +171,7 @@ export default function RSSMode() {
           </select>
 
           {/* Filter Buttons */}
-          <div className="flex items-center gap-1 bg-white rounded-lg border border-[var(--border-input)] p-0.5">
+          <div className="flex items-center gap-1 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-input)] p-0.5">
             <button
               onClick={() => setFilter('all')}
               className={`px-2 py-1 rounded text-[11px] transition-colors ${filter === 'all' ? 'bg-[var(--color-blue-light)] text-[var(--color-blue)]' : 'hover:bg-black/5'}`}
@@ -223,7 +223,7 @@ export default function RSSMode() {
                   onClick={() => handleItemClick(item)}
                   className={`w-full text-left p-4 hover:bg-black/[0.02] transition-colors ${
                     selectedItem?.id === item.id ? 'bg-[var(--color-blue-light)] border-l-2 border-[var(--color-blue)]' : ''
-                  } ${!item.read ? 'bg-white' : ''}`}
+                  } ${!item.read ? 'bg-[var(--bg-primary)]' : ''}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">

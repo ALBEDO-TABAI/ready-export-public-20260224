@@ -72,7 +72,7 @@ export default function BrowserMode() {
                 flex items-center gap-2 px-3 py-1 rounded-md text-[12px] max-w-[160px]
                 transition-all duration-200
                 ${tab.active
-                  ? 'bg-white border border-[var(--border-default)] shadow-sm'
+                  ? 'bg-[var(--bg-primary)] border border-[var(--border-default)] shadow-sm'
                   : 'hover:bg-black/5'
                 }
               `}
@@ -110,7 +110,7 @@ export default function BrowserMode() {
           </button>
 
           {showSplitMenu && (
-            <div className="absolute right-0 top-full mt-1 py-1 bg-white rounded-lg shadow-lg border border-[var(--border-default)] z-10">
+            <div className="absolute right-0 top-full mt-1 py-1 bg-[var(--bg-primary)] rounded-lg shadow-lg border border-[var(--border-default)] z-10">
               <button className="flex items-center gap-2 px-3 py-1.5 text-[12px] hover:bg-black/5 w-full text-left">
                 <Columns2 className="w-4 h-4" />
                 左右分屏

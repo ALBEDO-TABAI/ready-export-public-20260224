@@ -404,7 +404,7 @@ export default function VideoMode() {
               <div className="space-y-3">
                 <div>
                   <label className="text-[11px] text-[var(--text-muted)] block mb-1">字体</label>
-                  <select className="w-full px-2 py-1.5 rounded border border-[var(--border-input)] text-[12px] bg-white">
+                  <select className="w-full px-2 py-1.5 rounded border border-[var(--border-input)] text-[12px] bg-[var(--bg-primary)]">
                     <option>思源黑体</option>
                     <option>微软雅黑</option>
                     <option>PingFang SC</option>
@@ -412,7 +412,7 @@ export default function VideoMode() {
                 </div>
                 <div>
                   <label className="text-[11px] text-[var(--text-muted)] block mb-1">字重</label>
-                  <select className="w-full px-2 py-1.5 rounded border border-[var(--border-input)] text-[12px] bg-white">
+                  <select className="w-full px-2 py-1.5 rounded border border-[var(--border-input)] text-[12px] bg-[var(--bg-primary)]">
                     <option>Regular</option>
                     <option>Bold</option>
                     <option>Light</option>

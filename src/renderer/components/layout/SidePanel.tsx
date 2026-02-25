@@ -121,7 +121,7 @@ export default function SidePanel({ title = '文件管理', width = 220 }: SideP
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
-          <div className="flex-1 truncate text-[11px] text-[var(--text-muted)] bg-white rounded px-2 py-1 border border-[var(--border-default)]">
+          <div className="flex-1 truncate text-[11px] text-[var(--text-muted)] bg-[var(--bg-primary)] rounded px-2 py-1 border border-[var(--border-default)]">
             {currentPath}
           </div>
         </div>
@@ -131,7 +131,7 @@ export default function SidePanel({ title = '文件管理', width = 220 }: SideP
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="搜索文件..."
-          className="w-full px-3 py-1.5 rounded-[10px] text-[12px] border border-[var(--border-input)] bg-white
+          className="w-full px-3 py-1.5 rounded-[10px] text-[12px] border border-[var(--border-input)] bg-[var(--bg-primary)]
             placeholder:text-[var(--text-placeholder)]
             focus:outline-none focus:border-[var(--color-blue)] focus:ring-1 focus:ring-[var(--color-blue)]"
         />

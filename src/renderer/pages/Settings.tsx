@@ -105,15 +105,23 @@ const settingsData: SettingSection[] = [
     ]
   }
 ]
+import { useTheme } from '../stores/useTheme'
 
 export default function Settings() {
   const navigate = useNavigate()
   const [activeSection, setActiveSection] = useState('account')
   const [settings, setSettings] = useState(settingsData)
+  const { theme, toggleTheme } = useTheme()
 
   const currentSection = settings.find(s => s.id === activeSection)
 
   const updateSetting = (sectionId: string, settingId: string, value: boolean | string) => {
+    // Handle dark mode toggle via theme store
+    if (sectionId === 'appearance' && settingId === 'darkMode') {
+      toggleTheme()
+      // Also update the local state for the toggle UI
+    }
+
     setSettings(settings.map(section =>
       section.id === sectionId
         ? {
@@ -194,7 +202,7 @@ export default function Settings() {
                       >
                         <span
                           className={`
-                            absolute top-1 w-4 h-4 rounded-full bg-white transition-transform
+                            absolute top-1 w-4 h-4 rounded-full bg-[var(--bg-primary)] transition-transform
                             ${setting.value ? 'left-6' : 'left-1'}
                           `}
                         />
@@ -205,7 +213,7 @@ export default function Settings() {
                       <select
                         value={setting.value as string}
                         onChange={(e) => updateSetting(currentSection.id, setting.id, e.target.value)}
-                        className="px-3 py-1.5 rounded-lg border border-[var(--border-input)] text-[12px] bg-white"
+                        className="px-3 py-1.5 rounded-lg border border-[var(--border-input)] text-[12px] bg-[var(--bg-primary)]"
                       >
                         {setting.options?.map(opt => (
                           <option key={opt} value={opt}>{opt}</option>

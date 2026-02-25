@@ -22,7 +22,7 @@ export default function ModeSlider() {
     >
       {/* Knob */}
       <div
-        className="absolute w-[22px] h-[22px] rounded-[11px] bg-white shadow-sm transition-all duration-300 ease-out"
+        className="absolute w-[22px] h-[22px] rounded-[11px] bg-[var(--bg-primary)] shadow-sm transition-all duration-300 ease-out"
         style={{
           transform: appMode === 'ready' ? 'translateX(34px)' : 'translateX(2px)',
           border: '1px solid var(--border-input)'

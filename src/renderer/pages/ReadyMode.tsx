@@ -152,7 +152,7 @@ export default function ReadyMode() {
               {tasks.map(task => (
                 <div
                   key={task.id}
-                  className="p-2 rounded-lg bg-white border border-[var(--border-default)] text-[12px]"
+                  className="p-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-default)] text-[12px]"
                 >
                   <div className="flex items-center gap-2">
                     <span className={`
@@ -190,7 +190,7 @@ export default function ReadyMode() {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="给 Agent 们发送指令..."
-                className="w-full px-3 py-2 pr-10 rounded-lg text-[12px] border border-[var(--border-input)] bg-white
+                className="w-full px-3 py-2 pr-10 rounded-lg text-[12px] border border-[var(--border-input)] bg-[var(--bg-primary)]
                   placeholder:text-[var(--text-placeholder)]
                   focus:outline-none focus:border-[var(--color-blue)]"
               />
@@ -233,7 +233,7 @@ export default function ReadyMode() {
                       {msg.timestamp.toLocaleTimeString()}
                     </span>
                   </div>
-                  <div className="text-[12px] text-[var(--text-body)] bg-white rounded-lg px-3 py-2 border border-[var(--border-default)]">
+                  <div className="text-[12px] text-[var(--text-body)] bg-[var(--bg-primary)] rounded-lg px-3 py-2 border border-[var(--border-default)]">
                     {msg.content}
                   </div>
                 </div>
@@ -256,7 +256,7 @@ export default function ReadyMode() {
             <input
               type="text"
               placeholder="搜索文件..."
-              className="w-full px-2 py-1.5 rounded-lg text-[11px] border border-[var(--border-input)] bg-white
+              className="w-full px-2 py-1.5 rounded-lg text-[11px] border border-[var(--border-input)] bg-[var(--bg-primary)]
                 placeholder:text-[var(--text-placeholder)]
                 focus:outline-none focus:border-[var(--color-blue)]"
             />

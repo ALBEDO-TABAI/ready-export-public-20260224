@@ -342,7 +342,7 @@ export default function ImageMode() {
           >
             {/* Canvas Container */}
             <div
-              className="relative bg-white shadow-xl rounded-sm"
+              className="relative bg-[var(--bg-primary)] shadow-xl rounded-sm"
               style={{ width: 800, height: 600 }}
             >
               {objects.filter(o => o.visible).map((obj) => (
@@ -447,7 +447,7 @@ export default function ImageMode() {
                       type="text"
                       value={selectedObject.fill || '#ffffff'}
                       onChange={(e) => updateSelectedObject({ fill: e.target.value })}
-                      className="flex-1 px-2 py-1 rounded border border-[var(--border-input)] text-[12px] bg-white"
+                      className="flex-1 px-2 py-1 rounded border border-[var(--border-input)] text-[12px] bg-[var(--bg-primary)]"
                     />
                   </div>
                   <div className="mt-2">
@@ -484,7 +484,7 @@ export default function ImageMode() {
                           type="text"
                           value={selectedObject.stroke || '#000000'}
                           onChange={(e) => updateSelectedObject({ stroke: e.target.value })}
-                          className="flex-1 px-2 py-1 rounded border border-[var(--border-input)] text-[12px] bg-white"
+                          className="flex-1 px-2 py-1 rounded border border-[var(--border-input)] text-[12px] bg-[var(--bg-primary)]"
                         />
                       </div>
                       <NumberField
@@ -503,7 +503,7 @@ export default function ImageMode() {
                     <textarea
                       value={selectedObject.text || ''}
                       onChange={(e) => updateSelectedObject({ text: e.target.value })}
-                      className="w-full px-2 py-1.5 rounded border border-[var(--border-input)] text-[12px] resize-none bg-white"
+                      className="w-full px-2 py-1.5 rounded border border-[var(--border-input)] text-[12px] resize-none bg-[var(--bg-primary)]"
                       rows={3}
                     />
                     <div className="mt-2">
@@ -629,7 +629,7 @@ export default function ImageMode() {
       {contextMenu.visible && (
         <div
           ref={contextMenuRef}
-          className="fixed z-50 bg-white rounded-lg shadow-lg border border-[var(--border-default)] py-1 min-w-[140px]"
+          className="fixed z-50 bg-[var(--bg-primary)] rounded-lg shadow-lg border border-[var(--border-default)] py-1 min-w-[140px]"
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
           <button
@@ -686,7 +686,7 @@ function NumberField({
           type="number"
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full px-2 py-1 rounded border border-[var(--border-input)] text-[12px] bg-white"
+          className="w-full px-2 py-1 rounded border border-[var(--border-input)] text-[12px] bg-[var(--bg-primary)]"
         />
         {suffix && <span className="text-[10px] text-[var(--text-muted)] ml-1">{suffix}</span>}
       </div>

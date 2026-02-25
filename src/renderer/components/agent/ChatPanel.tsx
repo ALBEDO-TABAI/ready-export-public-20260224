@@ -90,14 +90,14 @@ export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: Ch
         <div className="grid grid-cols-2 gap-2 mt-4">
           <button
             onClick={() => setInputValue('帮我分析最近的热门视频趋势')}
-            className="p-3 rounded-lg border border-[var(--border-default)] bg-white hover:border-[var(--color-blue)] hover:bg-[var(--color-blue-light)] transition-all text-left"
+            className="p-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] hover:border-[var(--color-blue)] hover:bg-[var(--color-blue-light)] transition-all text-left"
           >
             <div className="text-[12px] font-medium text-[var(--text-title)] mb-1">📊 内容优化</div>
             <div className="text-[11px] text-[var(--text-muted)]">分析热门数据...</div>
           </button>
           <button
             onClick={() => setInputValue('帮我写一篇关于 AI 创作的文案')}
-            className="p-3 rounded-lg border border-[var(--border-default)] bg-white hover:border-[var(--color-blue)] hover:bg-[var(--color-blue-light)] transition-all text-left"
+            className="p-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] hover:border-[var(--color-blue)] hover:bg-[var(--color-blue-light)] transition-all text-left"
           >
             <div className="text-[12px] font-medium text-[var(--text-title)] mb-1">📝 写文案</div>
             <div className="text-[11px] text-[var(--text-muted)]">写一篇...</div>
@@ -127,7 +127,7 @@ export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: Ch
                   ? 'bg-[var(--color-blue)] text-white'
                   : msg.type === 'system'
                     ? 'bg-red-50 text-red-600 border border-red-100'
-                    : 'bg-white border border-[var(--border-default)]'
+                    : 'bg-[var(--bg-primary)] border border-[var(--border-default)]'
                 }`}
             >
               {msg.content}
@@ -144,7 +144,7 @@ export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: Ch
                 <div className="w-8 h-8 rounded-lg bg-[var(--bg-canvas)] flex items-center justify-center">
                   <span>{currentAgentData?.avatar}</span>
                 </div>
-                <div className="px-3 py-2 rounded-xl bg-white border border-[var(--border-default)]">
+                <div className="px-3 py-2 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-default)]">
                   <div className="flex gap-1">
                     <span className="w-2 h-2 rounded-full bg-[var(--color-blue)] animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-2 h-2 rounded-full bg-[var(--color-blue)] animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -195,7 +195,7 @@ export default function ChatPanel({ width = 380, title = 'Ready AI 助手' }: Ch
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={`给 ${currentAgentData?.displayName || 'Agent'} 发送指令...`}
-            className="w-full px-3 py-2.5 pr-24 rounded-[10px] text-[13px] border border-[var(--border-input)] bg-white
+            className="w-full px-3 py-2.5 pr-24 rounded-[10px] text-[13px] border border-[var(--border-input)] bg-[var(--bg-primary)]
               placeholder:text-[var(--text-placeholder)]
               focus:outline-none focus:border-[var(--color-blue)] focus:ring-1 focus:ring-[var(--color-blue)]"
           />
